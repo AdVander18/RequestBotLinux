@@ -1,0 +1,34 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="RequestBotLinux.App"
+             xmlns:local="using:RequestBotLinux"
+             RequestedThemeVariant="Default">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+	<Application.Styles>
+		<FluentTheme />
+		<StyleInclude Source="Styles/AppDefaultStyles.axaml"> </StyleInclude>
+	</Application.Styles>
+	
+
+	<Application.Resources>
+		<CornerRadius x:Key="ButtonCornerRadius">5</CornerRadius>
+		<SolidColorBrush x:Key="PrimaryForeground">#CFCFCF</SolidColorBrush>
+		<SolidColorBrush x:Key="PrimaryBackground">#14172D</SolidColorBrush>
+		<LinearGradientBrush x:Key="PrimaryBackgroundGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+			<GradientStop Offset="0" Color="#111214"/>
+			<GradientStop Offset="1" Color="#151E3E"/>
+		</LinearGradientBrush>
+
+		<SolidColorBrush x:Key="PrimaryHoverBackground">#333B5A</SolidColorBrush>
+		<SolidColorBrush x:Key="PrimaryHoverForeground">White</SolidColorBrush>
+
+		<FontFamily x:Key="AkkoPro">avares://RequestBotLinux/Assets/Fonts/AkkoPro-Regular.ttf#Akko Pro</FontFamily>
+		<FontFamily x:Key="Phosphor">avares://RequestBotLinux/Assets/Fonts/Phosphor.ttf#Phosphor</FontFamily>
+		<FontFamily x:Key="PhosphorBold">avares://RequestBotLinux/Assets/Fonts/Phosphor-Bold.ttf#Phosphor</FontFamily>
+		<FontFamily x:Key="PhosphorFill">avares://RequestBotLinux/Assets/Fonts/Phosphor-Fill.ttf#Phosphor</FontFamily>
+
+	</Application.Resources>
+
+	
+</Application>

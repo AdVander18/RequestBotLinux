@@ -1,0 +1,72 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:RequestBotLinux.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1024" d:DesignHeight="600"
+		Width="1024" Height="600"
+        x:Class="RequestBotLinux.Views.MainWindow"
+		xmlns:local="using:RequestBotLinux"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="RequestBotLinux">
+
+    <Grid Background="{DynamicResource ResourceKey = PrimaryBackground}" ColumnDefinitions="200,*">
+		<Border Grid.Column="0" Padding="20" Background="{DynamicResource PrimaryBackgroundGradient}">
+			<Grid RowDefinitions = "*, Auto">
+				<StackPanel Grid.Row= "0" Spacing="12">
+					<!-- Кнопка "Домой" с обработчиком OnHomeButtonClicked -->
+					<Button HorizontalAlignment="Stretch" Click="OnHomeButtonClicked">
+						<StackPanel Orientation="Horizontal">
+							<Label Classes="icon" Content="&#xe2c2;"/>
+							<Label Content="Домой"/>
+						</StackPanel>
+					</Button>
+					<Button HorizontalAlignment="Stretch">
+						<StackPanel Orientation="Horizontal">
+							<Label Classes="icon" Content="&#xe166;"></Label>
+							<Label FontFamily="{DynamicResource ResourceKey=PhosphorFill}" Content="Cообщения"></Label>
+						</StackPanel>
+					</Button>
+					<Button HorizontalAlignment="Stretch">
+						<StackPanel Orientation="Horizontal">
+							<Label Classes="icon" Content="&#xeba6;"></Label>
+							<Label Content="Задачи"></Label>
+						</StackPanel>
+					</Button>
+					<Button HorizontalAlignment="Stretch">
+						<StackPanel Orientation="Horizontal">
+							<Label Classes="icon" Content="&#xed16;"></Label>
+							<Label Content="Кабинеты"></Label>
+						</StackPanel>
+					</Button>
+					<Button HorizontalAlignment="Stretch">
+						<StackPanel Orientation="Horizontal">
+							<Label Classes="icon" Content="&#xe150;"></Label>
+							<Label Content="Аналитика"></Label>
+						</StackPanel>
+					</Button>
+					<Button HorizontalAlignment="Stretch">
+						<StackPanel Orientation="Horizontal">
+							<Label Classes="icon" Content="&#xe3e8;"></Label>
+							<Label Content="FAQ"></Label>
+						</StackPanel>
+					</Button>
+					<Button HorizontalAlignment="Stretch">
+						<StackPanel Orientation="Horizontal">
+							<Label Classes="icon" Content="&#xe3e6;"></Label>
+							<Label Content="QR-Code"></Label>
+						</StackPanel>
+					</Button>
+				</StackPanel>
+				<Button Grid.Row="1" Classes="icon-center">
+					<Label FontFamily="{DynamicResource ResourceKey=PhosphorFill}" Classes="icon-only" Content="&#xe272;"></Label>
+				</Button>
+			</Grid>
+		</Border>
+		<!-- Основной контент -->
+		<ContentControl Grid.Column="1"
+                        x:Name="MainContent"
+                        Margin="10"/>
+	</Grid>
+</Window>
