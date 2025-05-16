@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="RequestBotLinux.TasksWindow">
+	<Grid ColumnDefinitions="300,*" RowDefinitions="*,Auto" Margin="10">
+		<!-- Левая часть: список задач -->
+		<Border Grid.Column="0" Background="#14172D" CornerRadius="8" Margin="0 0 10 0">
+			<StackPanel>
+				<TextBlock x:Name="tbTitle"
+                           Text="Задачи"
+                           FontSize="16"
+                           Margin="10"
+                           Foreground="White"/>
+				<ListBox x:Name="listViewTasks"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+			</StackPanel>
+		</Border>
+
+		<!-- Правая часть: детали задачи -->
+		<TextBox x:Name="textBoxMessages"
+                 Grid.Column="1"
+                 IsReadOnly="True"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 FontFamily="Courier New"
+                 Foreground="White"
+                 Background="Transparent"/>
+
+		<!-- Кнопка удаления -->
+		<Button x:Name="btnDeleteTask"
+                Grid.Row="1"
+                Grid.Column="0"
+                Content="Удалить задачу"
+                Margin="10"
+                HorizontalAlignment="Stretch"
+                Background="#FF4444"
+                Foreground="White"/>
+	</Grid>
+</UserControl>

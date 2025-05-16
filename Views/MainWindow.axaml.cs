@@ -11,25 +11,50 @@ namespace RequestBotLinux.Views
         public MainWindow()
         {
             InitializeComponent();
-            App.Database.MessageAdded += () =>
-            {
-                Dispatcher.UIThread.Post(() =>
-                {
-                    if (MainContent.Content is MainFormInstance mainForm)
-                    {
-                        LoadMessages(); // Автообновление при новых сообщениях
-                    }
-                });
-            };
-
-
-
+            App.BotStatusChanged += OnBotStatusChanged;
+            App.Database.MessageAdded += () => LoadMessages();
+            RefreshMessagesFromDb();
         }
-        private void OnHomeButtonClicked(object sender, RoutedEventArgs e)
+
+        public void RefreshMessagesFromDb()
         {
-            // Создаем экземпляр UserControl и помещаем его в ContentControl
-            MainContent.Content = new MainFormInstance();
+            var messages = App.Database.GetAllTasks()
+                .Select(t => $"[{t.Username}] {t.Timestamp}: {t.MessageText}");
+            if (MainContent.Content is MainFormInstance mainForm)
+            {
+                mainForm.UpdateMessages(string.Join(Environment.NewLine, messages));
+            }
+        }
+
+
+        private void OnBotStatusChanged(string message)
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (MainContent.Content is MainFormInstance mainForm)
+                {
+                    mainForm.AppendMessage(message);
+                }
+            });
+        }
+
+        private async void OnHomeButtonClicked(object sender, RoutedEventArgs e)
+        {
+            var mainForm = new MainFormInstance();
+            MainContent.Content = mainForm;
+
+            // Выполняем проверку подключения
+            var isConnected = await App.CheckBotConnectionAsync();
+            var statusMessage = isConnected
+                ? "[Система] Бот успешно подключен!"
+                : "[Ошибка] Не удалось подключиться к боту";
+
+            mainForm.UpdateMessages(statusMessage);
+
+            // Загружаем остальные данные
             LoadMessages();
+            LoadUsers();
+
         }
         private void TestDatabase()
         {
@@ -39,7 +64,7 @@ namespace RequestBotLinux.Views
                 Console.WriteLine($"Task {task.Id}: {task.MessageText}");
             }
         }
-        private void LoadMessages()
+        public void LoadMessages()
         {
             var messages = App.Database.GetAllTasks();
             var messagesText = string.Join(
@@ -47,13 +72,34 @@ namespace RequestBotLinux.Views
                 messages.Select(t => $"[{t.Username}] {t.Timestamp}: {t.MessageText}")
             );
 
-            var uniqueUsers = messages.Select(t => t.Username).Distinct().ToList();
-
             if (MainContent.Content is MainFormInstance mainForm)
             {
                 mainForm.UpdateMessages(messagesText);
-                mainForm.UpdateUsers(uniqueUsers);
             }
+        }
+        public void LoadUsers()
+        {
+            var users = App.Database.GetUniqueUsers();
+
+            if (MainContent.Content is MainFormInstance mainForm)
+            {
+                mainForm.UpdateUsers(users);
+            }
+        }
+        private void OnMessagesButtonClicked(object sender, RoutedEventArgs e)
+        {
+            var messagesWindow = new MessagesWindow();
+            MainContent.Content = messagesWindow;
+        }
+        private void OnTasksButtonClicked(object sender, RoutedEventArgs e)
+        {
+            var tasksWindow = new TasksWindow();
+            MainContent.Content = tasksWindow;
+        }
+        private void OnCabinetsButtonClicked(object sender, RoutedEventArgs e)
+        {
+            var cabinetsWindow = new CabinetsWindow();
+            MainContent.Content = cabinetsWindow;
         }
     }
 }

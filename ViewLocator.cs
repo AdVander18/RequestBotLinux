@@ -14,6 +14,7 @@ namespace RequestBotLinux
                 return null;
 
             var name = param.GetType().FullName!.Replace("ViewModel", "View", StringComparison.Ordinal);
+            name = name.Replace("ViewModels", "Views");
             var type = Type.GetType(name);
 
             if (type != null)

@@ -22,19 +22,19 @@
 							<Label Content="Домой"/>
 						</StackPanel>
 					</Button>
-					<Button HorizontalAlignment="Stretch">
+					<Button HorizontalAlignment="Stretch" Click="OnMessagesButtonClicked">
 						<StackPanel Orientation="Horizontal">
 							<Label Classes="icon" Content="&#xe166;"></Label>
 							<Label FontFamily="{DynamicResource ResourceKey=PhosphorFill}" Content="Cообщения"></Label>
 						</StackPanel>
 					</Button>
-					<Button HorizontalAlignment="Stretch">
+					<Button HorizontalAlignment="Stretch" Click="OnTasksButtonClicked">
 						<StackPanel Orientation="Horizontal">
 							<Label Classes="icon" Content="&#xeba6;"></Label>
 							<Label Content="Задачи"></Label>
 						</StackPanel>
 					</Button>
-					<Button HorizontalAlignment="Stretch">
+					<Button HorizontalAlignment="Stretch" Click="OnCabinetsButtonClicked">
 						<StackPanel Orientation="Horizontal">
 							<Label Classes="icon" Content="&#xed16;"></Label>
 							<Label Content="Кабинеты"></Label>

@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using System.Data.SQLite;
 using RequestBotLinux.Models;
 using Avalonia.Controls;
+using System.Diagnostics;
+using System.Data.Entity;
+
 
 namespace RequestBotLinux
 {
@@ -12,10 +15,12 @@ namespace RequestBotLinux
     {
         public event Action MessageAdded;
         private readonly string _connectionString;
+        public string DbPath { get; }
         public DataBase(string dbPath)
         {
             try
             {
+                DbPath = dbPath;
                 var directory = Path.GetDirectoryName(dbPath);
                 if (!Directory.Exists(directory))
                 {
@@ -107,34 +112,21 @@ namespace RequestBotLinux
             {
                 await connection.OpenAsync();
 
-                // Сохраняем пользователя
-                var userCommand = new SQLiteCommand(
-                    @"INSERT OR REPLACE INTO Users 
-    (Username, FirstName, LastName) 
-    VALUES (@username, @firstName, @lastName)",
+                var command = new SQLiteCommand(
+                    @"INSERT INTO Messages 
+            (Username, ChatId, MessageText, IsTask, Status, LastName, CabinetNumber, Deadline, Timestamp) 
+            VALUES (@username, @chatId, @messageText, 1, 'В работе', @lastName, @cabinet, @deadline, @timestamp)",
                     connection);
-                userCommand.Parameters.AddWithValue("@username", user.Username ?? "");
-                userCommand.Parameters.AddWithValue("@firstName", user.FirstName ?? "");
-                userCommand.Parameters.AddWithValue("@lastName", lastName);
-                await userCommand.ExecuteNonQueryAsync();
 
-                // Сохраняем задачу с дедлайном
-                var messageCommand = new SQLiteCommand(
-            @"INSERT INTO Messages 
-    (Username, ChatId, MessageText, IsTask, Status, LastName, CabinetNumber, Deadline, Timestamp) 
-    VALUES (@username, @chatId, @messageText, 1, 'Не завершено', @lastName, @cabinet, @deadline, @timestamp)",
-            connection);
+                command.Parameters.AddWithValue("@username", user.Username ?? "");
+                command.Parameters.AddWithValue("@chatId", chatId);
+                command.Parameters.AddWithValue("@messageText", description);
+                command.Parameters.AddWithValue("@lastName", lastName);
+                command.Parameters.AddWithValue("@cabinet", cabinet);
+                command.Parameters.AddWithValue("@deadline", deadline.ToString("yyyy-MM-dd HH:mm:ss"));
+                command.Parameters.AddWithValue("@timestamp", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                messageCommand.Parameters.AddWithValue("@username", user.Username ?? "");
-                messageCommand.Parameters.AddWithValue("@chatId", chatId);
-                messageCommand.Parameters.AddWithValue("@messageText", description);
-                messageCommand.Parameters.AddWithValue("@lastName", lastName);
-                messageCommand.Parameters.AddWithValue("@cabinet", cabinet);
-                messageCommand.Parameters.AddWithValue("@timestamp", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
-                // Конвертируем дедлайн в UTC
-                messageCommand.Parameters.AddWithValue("@deadline", deadline.ToString("yyyy-MM-dd HH:mm:ss"));
-
-                await messageCommand.ExecuteNonQueryAsync();
+                await command.ExecuteNonQueryAsync();
             }
             MessageAdded?.Invoke();
         }
@@ -206,22 +198,48 @@ namespace RequestBotLinux
                 command.ExecuteNonQuery();
             }
         }
+        // Временно измените метод добавления сообщений для теста
         public async Task AddMessageAsync(string username, long chatId, string messageText)
         {
             using (var connection = new SQLiteConnection(_connectionString))
             {
                 await connection.OpenAsync();
                 var command = new SQLiteCommand(
-                    "INSERT INTO Messages (Username, ChatId, MessageText) VALUES (@username, @chatId, @messageText)",
+                    @"INSERT INTO Messages 
+                (Username, ChatId, MessageText, Timestamp) 
+                VALUES 
+                (@username, @chatId, @messageText, @timestamp)",
                     connection);
 
+                // Добавьте эти строки:
                 command.Parameters.AddWithValue("@username", username);
                 command.Parameters.AddWithValue("@chatId", chatId);
                 command.Parameters.AddWithValue("@messageText", messageText);
+                command.Parameters.AddWithValue("@timestamp", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
 
                 await command.ExecuteNonQueryAsync();
             }
         }
+        public List<string> GetUniqueUsers()
+        {
+            var users = new List<string>();
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var command = new SQLiteCommand("SELECT DISTINCT Username FROM Messages WHERE IsFromAdmin = 0", connection);
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string username = reader["Username"].ToString();
+                        if (!string.IsNullOrEmpty(username))
+                            users.Add(username);
+                    }
+                }
+            }
+            return users;
+        }
+
         public List<MessageData> GetMessagesByUsername(string username)
         {
             var messages = new List<MessageData>();
@@ -230,12 +248,13 @@ namespace RequestBotLinux
                 connection.Open();
                 var command = new SQLiteCommand(
                     @"SELECT 
-        MessageText, 
-        Timestamp, 
-        IsFromAdmin,
-        Username
-      FROM Messages 
-      WHERE Username = @username",
+                MessageText, 
+                strftime('%Y-%m-%d %H:%M:%S', Timestamp) as Timestamp,
+                IsFromAdmin,
+                Username
+                FROM Messages 
+                WHERE Username = @username
+                ORDER BY Timestamp",
                     connection);
 
                 command.Parameters.AddWithValue("@username", username);
@@ -247,7 +266,7 @@ namespace RequestBotLinux
                         messages.Add(new MessageData
                         {
                             Username = reader["Username"].ToString(),
-                            Text = reader["MessageText"].ToString(),
+                            MessageText = reader["MessageText"].ToString(),
                             Timestamp = DateTime.Parse(reader["Timestamp"].ToString()),
                             IsFromAdmin = Convert.ToBoolean(reader["IsFromAdmin"])
                         });
@@ -319,6 +338,370 @@ namespace RequestBotLinux
                 connection);
             cmdAdd.ExecuteNonQuery();
         }
+        public int DeleteMessagesByPeriod(string username, TimeSpan period)
+        {
+            try
+            {
+                var nowUtc = DateTime.UtcNow;
+                var cutoff = nowUtc - period;
 
+                using (var conn = new SQLiteConnection(_connectionString))
+                {
+                    conn.Open();
+
+                    var deleteCmd = new SQLiteCommand(
+                        @"DELETE FROM Messages 
+            WHERE Username = @username 
+            AND Timestamp < @cutoff",
+                        conn);
+
+                    deleteCmd.Parameters.AddWithValue("@username", username);
+                    deleteCmd.Parameters.AddWithValue("@cutoff", cutoff.ToString("yyyy-MM-dd HH:mm:ss"));
+
+                    return deleteCmd.ExecuteNonQuery();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[DELETE ERROR] {ex}");
+                return 0;
+            }
+        }
+        public List<MessageData> GetAllMessages()
+        {
+            var messages = new List<MessageData>();
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var command = new SQLiteCommand(
+                    @"SELECT Username, MessageText, Timestamp, IsFromAdmin 
+              FROM Messages 
+              ORDER BY Timestamp DESC",
+                    connection);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        messages.Add(new MessageData
+                        {
+                            Username = reader["Username"].ToString(),
+                            MessageText = reader["MessageText"].ToString(),
+                            Timestamp = DateTime.Parse(reader["Timestamp"].ToString()),
+                            IsFromAdmin = Convert.ToBoolean(reader["IsFromAdmin"])
+                        });
+                    }
+                }
+            }
+            return messages;
+        }
+        // Получение всех кабинетов
+        public List<Cabinet> GetAllCabinets()
+        {
+            var cabinets = new List<Cabinet>();
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var cmd = new SQLiteCommand("SELECT * FROM Cabinets", connection);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        cabinets.Add(new Cabinet
+                        {
+                            Id = Convert.ToInt32(reader["Id"]),
+                            Number = reader["Number"].ToString(),
+                            Description = reader["Description"].ToString()
+                        });
+                    }
+                }
+            }
+            return cabinets;
+        }
+
+        // Добавление кабинета
+        public void AddCabinet(Cabinet cabinet)
+        {
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var cmd = new SQLiteCommand(
+                    "INSERT INTO Cabinets (Number, Description) VALUES (@num, @desc)",
+                    connection);
+                cmd.Parameters.AddWithValue("@num", cabinet.Number);
+                cmd.Parameters.AddWithValue("@desc", cabinet.Description);
+                cmd.ExecuteNonQuery();
+            }
+        }
+        public void UpdateCabinet(Cabinet cabinet)
+        {
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var cmd = new SQLiteCommand(
+                    "UPDATE Cabinets SET Number = @num, Description = @desc WHERE Id = @id",
+                    connection);
+                cmd.Parameters.AddWithValue("@num", cabinet.Number);
+                cmd.Parameters.AddWithValue("@desc", cabinet.Description);
+                cmd.Parameters.AddWithValue("@id", cabinet.Id);
+                cmd.ExecuteNonQuery();
+            }
+        }
+        public void AddEmployee(Employees employee)
+        {
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var cmd = new SQLiteCommand(
+                    "INSERT INTO Employees (FirstName, LastName, Position, CabinetId, Username) " +
+                    "VALUES (@fn, @ln, @pos, @cid, @user)", connection);
+
+                cmd.Parameters.AddWithValue("@fn", employee.FirstName);
+                cmd.Parameters.AddWithValue("@ln", employee.LastName);
+                cmd.Parameters.AddWithValue("@pos", employee.Position);
+                cmd.Parameters.AddWithValue("@cid", employee.CabinetId);
+                cmd.Parameters.AddWithValue("@user", employee.Username ?? (object)DBNull.Value);
+                cmd.ExecuteNonQuery();
+            }
+        }
+        public int AddEquipment(Equipment equipment)
+        {
+            using (var conn = new SQLiteConnection(_connectionString))
+            {
+                conn.Open();
+                var cmd = new SQLiteCommand(@"
+            INSERT INTO Equipment 
+                (Type, Model, OS, CabinetId) 
+            VALUES 
+                (@type, @model, @os, @cabinetId);
+            SELECT last_insert_rowid();", conn);
+
+                // Параметры с явной обработкой NULL
+                cmd.Parameters.AddWithValue("@type", equipment.Type);
+                cmd.Parameters.AddWithValue("@model", equipment.Model);
+                cmd.Parameters.AddWithValue("@os", equipment.OS ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@cabinetId", equipment.CabinetId);
+
+                return Convert.ToInt32(cmd.ExecuteScalar());
+            }
+        }
+
+        // Получение пользователей для кабинета
+        public List<Employees> GetEmployeesForCabinet(int cabinetId)
+        {
+            var employees = new List<Employees>();
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var cmd = new SQLiteCommand(
+                    "SELECT * FROM Employees WHERE CabinetId = @cabinetId",
+                    connection);
+                cmd.Parameters.AddWithValue("@cabinetId", cabinetId);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        employees.Add(new Employees
+                        {
+                            Id = Convert.ToInt32(reader["Id"]),
+                            FirstName = reader["FirstName"].ToString(),
+                            LastName = reader["LastName"].ToString(),
+                            Position = reader["Position"].ToString(),
+                            CabinetId = Convert.ToInt32(reader["CabinetId"]),
+                            Username = reader["Username"] is DBNull ? null : reader["Username"].ToString()
+                        });
+                    }
+                }
+            }
+            return employees;
+        }
+        public List<string> GetUsersForCabinet(int cabinetId)
+        {
+            var users = new List<string>();
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var cmd = new SQLiteCommand(
+                    "SELECT DISTINCT Username FROM Messages WHERE CabinetNumber = @cab",
+                    connection);
+                cmd.Parameters.AddWithValue("@cab", cabinetId.ToString());
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        users.Add(reader["Username"].ToString());
+                    }
+                }
+            }
+            return users;
+        }
+        public List<Equipment> GetEquipmentForCabinet(int cabinetId)
+        {
+            var equipment = new List<Equipment>();
+            using (var conn = new SQLiteConnection(_connectionString))
+            {
+                conn.Open();
+                var cmd = new SQLiteCommand(
+                    "SELECT * FROM Equipment WHERE CabinetId = @cabinetId",
+                    conn);
+                cmd.Parameters.AddWithValue("@cabinetId", cabinetId);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        equipment.Add(new Equipment
+                        {
+                            Id = Convert.ToInt32(reader["Id"]),
+                            Type = reader["Type"].ToString(),
+                            Model = reader["Model"].ToString(),
+                            OS = reader["OS"] is DBNull ? null : reader["OS"].ToString(),
+                            CabinetId = Convert.ToInt32(reader["CabinetId"])
+                        });
+                    }
+                }
+            }
+            return equipment;
+        }
+
+        public Cabinet GetCabinetById(int id)
+        {
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var cmd = new SQLiteCommand("SELECT * FROM Cabinets WHERE Id = @id", connection);
+                cmd.Parameters.AddWithValue("@id", id);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return new Cabinet
+                        {
+                            Id = Convert.ToInt32(reader["Id"]),
+                            Number = reader["Number"].ToString(),
+                            Description = reader["Description"].ToString()
+                        };
+                    }
+                }
+            }
+            return null;
+        }
+        public List<string> GetAllUsers()
+        {
+            var usernames = new List<string>();
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var cmd = new SQLiteCommand("SELECT Username FROM Users", connection);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        usernames.Add(reader["Username"].ToString());
+                    }
+                }
+            }
+            return usernames;
+        }
+        public Employees GetEmployeeById(int id)
+        {
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var command = new SQLiteCommand(
+                    "SELECT * FROM Employees WHERE Id = @id",
+                    connection);
+                command.Parameters.AddWithValue("@id", id);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return new Employees
+                        {
+                            Id = Convert.ToInt32(reader["Id"]),
+                            FirstName = reader["FirstName"].ToString(),
+                            LastName = reader["LastName"].ToString(),
+                            Position = reader["Position"].ToString(),
+                            Username = reader["Username"].ToString(),
+                            CabinetId = Convert.ToInt32(reader["CabinetId"])
+                        };
+                    }
+                }
+            }
+            return null;
+        }
+        public void UpdateEmployee(Employees employee)
+        {
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var cmd = new SQLiteCommand(
+                    @"UPDATE Employees SET 
+                    FirstName = @fn,
+                    LastName = @ln,
+                    Position = @pos,
+                    Username = @user
+                WHERE Id = @id", connection);
+
+                cmd.Parameters.AddWithValue("@fn", employee.FirstName);
+                cmd.Parameters.AddWithValue("@ln", employee.LastName);
+                cmd.Parameters.AddWithValue("@pos", employee.Position);
+                cmd.Parameters.AddWithValue("@user", employee.Username ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@id", employee.Id);
+                cmd.ExecuteNonQuery();
+            }
+        }
+        public Equipment GetEquipmentById(int id)
+        {
+            using (var conn = new SQLiteConnection(_connectionString))
+            {
+                conn.Open();
+                var cmd = new SQLiteCommand(@"
+            SELECT 
+                Id, Type, Model, OS, CabinetId
+            FROM Equipment 
+            WHERE Id = @id", conn);
+                cmd.Parameters.AddWithValue("@id", id);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return new Equipment
+                        {
+                            Id = Convert.ToInt32(reader["Id"]),
+                            Type = reader["Type"].ToString(),
+                            Model = reader["Model"].ToString(),
+                            OS = reader["OS"] is DBNull ? null : reader["OS"].ToString(),
+                            CabinetId = Convert.ToInt32(reader["CabinetId"])
+                        };
+                    }
+                    return null;
+                }
+            }
+        }
+        public void UpdateEquipment(Equipment equipment)
+        {
+            using (var conn = new SQLiteConnection(_connectionString))
+            {
+                conn.Open();
+                var cmd = new SQLiteCommand(@"
+            UPDATE Equipment 
+            SET 
+                Type = @type,
+                Model = @model,
+                OS = @os
+            WHERE Id = @id", conn);
+
+                cmd.Parameters.AddWithValue("@type", equipment.Type);
+                cmd.Parameters.AddWithValue("@model", equipment.Model);
+                cmd.Parameters.AddWithValue("@os", equipment.OS ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@id", equipment.Id);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
     }
 }

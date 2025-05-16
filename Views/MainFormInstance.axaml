@@ -12,51 +12,49 @@
                           Margin="10"
                           Foreground="{DynamicResource TextPrimary}"/>
 				<ListBox x:Name="listViewUsers"
-						 ScrollViewer.HorizontalScrollBarVisibility="Auto">
-					<ListBox.Styles>
-						<Style Selector="ListBoxItem">
-							<Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-							<Setter Property="Margin" Value="10 5"/>
-							<Setter Property="Template">
-								<ControlTemplate>
-									<Border Background="Transparent">
-										<ContentPresenter />
-									</Border>
-								</ControlTemplate>
-							</Setter>
-						</Style>
-					</ListBox.Styles>
+         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding}"
+									   Foreground="{DynamicResource TextPrimary}"
+									   Margin="10 5"
+									   FontSize="14"/>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
 				</ListBox>
 			</StackPanel>
 		</Border>
 		<Grid Grid.Column="1" RowDefinitions="*,Auto">
-			<ScrollViewer Grid.Row="0">
+			<ScrollViewer x:Name="scrollViewer" Grid.Row="0">
 				<TextBox x:Name="textBoxMessages"
-                         IsReadOnly="True"
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap"
-                         FontFamily="Courier New"
-                         Foreground="{DynamicResource TextPrimary}"
-                         Background="Transparent"
-                         BorderThickness="0"
-                         Padding="10"
-                         Text="[Пользователь] 12:34: Тестовое сообщение
-						     [Вы] 12:35:15 Ответ на сообщение"/>
+             IsReadOnly="True"
+             AcceptsReturn="True"
+             TextWrapping="Wrap"
+             FontFamily="Courier New"
+             Foreground="{DynamicResource TextPrimary}"
+             Background="Transparent"
+             BorderThickness="0"
+             Padding="10"
+             Text=""/>
 			</ScrollViewer>
 			<Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" Margin="0 10 0 0">
 				<TextBox x:Name="tbSendMessage"
                          Grid.Column="0"
                          Watermark="Введите сообщение..."
-                         AcceptsReturn="True"/>
+                         AcceptsReturn="False"
+						 TextWrapping="Wrap"
+						 KeyDown="OnSendMessageKeyDown"/>
 
 				<Button Grid.Column="1"
                         Content="Отправить"
-                        Margin="10 0"/>
+                        Margin="10 0"
+						Click="OnSendMessageClick"/>
 
 				<Button Grid.Column="2"
                         Content="Удалить"
                         Background="#FF4444"
-                        Foreground="White"/>
+                        Foreground="White"
+						Click="OnDeleteButtonClick"/>
 			</Grid>
 		</Grid>
 	</Grid>
