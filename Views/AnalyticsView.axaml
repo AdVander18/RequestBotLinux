@@ -5,26 +5,56 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="RequestBotLinux.AnalyticsView">
 	<DockPanel>
-		<ComboBox Name="StatusFilterComboBox"
-				  DockPanel.Dock="Top"
-				  Items="{Binding StatusFilters}"
+		<!-- Фильтр статусов -->
+		<ComboBox DockPanel.Dock="Top"
 				  SelectedIndex="0"
-				  SelectionChanged="OnStatusFilterChanged"/>
+				  Margin="10">
+			<ComboBoxItem>Все</ComboBoxItem>
+			<ComboBoxItem>Не завершено</ComboBoxItem>
+			<ComboBoxItem>Завершено</ComboBoxItem>
+		</ComboBox>
 
-		<TabControl>
+		<!-- Вкладки -->
+		<TabControl DockPanel.Dock="Top">
+			<!-- Вкладка статусов -->
 			<TabItem Header="Статусы задач">
-				<oxy:PlotView Name="StatusPlot" Model="{Binding StatusModel}"/>
+				<Border BorderBrush="Gray"
+						BorderThickness="1"
+						Margin="10"
+						Padding="10"
+						HorizontalAlignment="Stretch">
+					<TextBlock Text="График статусов задач"
+							   VerticalAlignment="Center"
+							   HorizontalAlignment="Center"/>
+				</Border>
 			</TabItem>
 
+			<!-- Вкладка кабинетов -->
 			<TabItem Header="Кабинеты">
-				<DockPanel>
-					<ComboBox Name="TimeFilterComboBox"
-							  DockPanel.Dock="Top"
-							  Items="{Binding TimeFilters}"
-							  SelectedIndex="0"
-							  SelectionChanged="OnTimeFilterChanged"/>
-					<oxy:PlotView Name="CabinetPlot" Model="{Binding CabinetModel}"/>
-				</DockPanel>
+				<Grid Margin="10">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto"/>
+						<RowDefinition Height="*"/>
+					</Grid.RowDefinitions>
+
+					<!-- Фильтр времени -->
+					<ComboBox SelectedIndex="0"
+							  Margin="0,0,0,10"
+							  Grid.Row="0">
+						<ComboBoxItem>За месяц</ComboBoxItem>
+						<ComboBoxItem>За неделю</ComboBoxItem>
+					</ComboBox>
+
+					<!-- График кабинетов -->
+					<Border BorderBrush="Gray"
+							BorderThickness="1"
+							Padding="10"
+							Grid.Row="1">
+						<TextBlock Text="График распределения по кабинетам"
+								   VerticalAlignment="Center"
+								   HorizontalAlignment="Center"/>
+					</Border>
+				</Grid>
 			</TabItem>
 		</TabControl>
 	</DockPanel>

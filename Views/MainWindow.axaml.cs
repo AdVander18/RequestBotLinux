@@ -101,5 +101,10 @@ namespace RequestBotLinux.Views
             var cabinetsWindow = new CabinetsWindow();
             MainContent.Content = cabinetsWindow;
         }
+        private void OnAnalyticsButtonClicked(object sender, RoutedEventArgs e)
+        {
+            var analyticsWindow = new AnalyticsView();
+            MainContent.Content = analyticsWindow;
+        }
     }
 }
