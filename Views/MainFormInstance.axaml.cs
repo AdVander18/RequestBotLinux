@@ -105,6 +105,7 @@ public partial class MainFormInstance : UserControl
             // ≈сли сообщение было сохранено, но не отправлено, можно обновить статус
         }
     }
+
     private async void OnDeleteButtonClick(object sender, RoutedEventArgs e)
     {
         if (listViewUsers.SelectedItem is not string selectedUser)
@@ -174,6 +175,7 @@ public partial class MainFormInstance : UserControl
             }
         }
     }
+
     private void OnSendMessageKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.Enter)
