@@ -6,9 +6,10 @@
              x:Class="RequestBotLinux.AnalyticsView">
 	<DockPanel>
 		<!-- Фильтр статусов -->
-		<ComboBox DockPanel.Dock="Top"
-				  SelectedIndex="0"
-				  Margin="10">
+		<ComboBox x:Name="StatusFilterComboBox"
+                  DockPanel.Dock="Top"
+                  SelectedIndex="0"
+                  Margin="10">
 			<ComboBoxItem>Все</ComboBoxItem>
 			<ComboBoxItem>Не завершено</ComboBoxItem>
 			<ComboBoxItem>Завершено</ComboBoxItem>
@@ -18,15 +19,12 @@
 		<TabControl DockPanel.Dock="Top">
 			<!-- Вкладка статусов -->
 			<TabItem Header="Статусы задач">
-				<Border BorderBrush="Gray"
-						BorderThickness="1"
-						Margin="10"
-						Padding="10"
-						HorizontalAlignment="Stretch">
-					<TextBlock Text="График статусов задач"
-							   VerticalAlignment="Center"
-							   HorizontalAlignment="Center"/>
-				</Border>
+				<Border x:Name="StatusChartContainer"
+                        BorderBrush="Gray"
+                        BorderThickness="1"
+                        Margin="10"
+                        Padding="10"
+                        HorizontalAlignment="Stretch"/>
 			</TabItem>
 
 			<!-- Вкладка кабинетов -->
@@ -38,22 +36,20 @@
 					</Grid.RowDefinitions>
 
 					<!-- Фильтр времени -->
-					<ComboBox SelectedIndex="0"
-							  Margin="0,0,0,10"
-							  Grid.Row="0">
+					<ComboBox x:Name="TimeFilterComboBox"
+                              SelectedIndex="0"
+                              Margin="0,0,0,10"
+                              Grid.Row="0">
 						<ComboBoxItem>За месяц</ComboBoxItem>
 						<ComboBoxItem>За неделю</ComboBoxItem>
 					</ComboBox>
 
 					<!-- График кабинетов -->
-					<Border BorderBrush="Gray"
-							BorderThickness="1"
-							Padding="10"
-							Grid.Row="1">
-						<TextBlock Text="График распределения по кабинетам"
-								   VerticalAlignment="Center"
-								   HorizontalAlignment="Center"/>
-					</Border>
+					<Border x:Name="CabinetChartContainer"
+                            BorderBrush="Gray"
+                            BorderThickness="1"
+                            Padding="10"
+                            Grid.Row="1"/>
 				</Grid>
 			</TabItem>
 		</TabControl>

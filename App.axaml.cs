@@ -14,9 +14,21 @@ using Avalonia.Threading;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using System.Text.RegularExpressions;
+using MsBox.Avalonia.Dto;
+using System.Text;
 
 namespace RequestBotLinux
 {
+    public static class StringExtensions
+    {
+        public static string Truncate(this string value, int maxLength, string suffix = "...")
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+            return value.Length > maxLength
+                ? value.Substring(0, maxLength - suffix.Length) + suffix
+                : value;
+        }
+    }
     public partial class App : Application
     {
         public static DataBase Database { get; private set; }
@@ -67,14 +79,20 @@ namespace RequestBotLinux
 
         private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken ct)
         {
+            long chatId = 0;
+            string messageText = string.Empty;
+            string username = "N/A";
+
             try
             {
                 if (update.Message is { } message)
                 {
                     var user = message.From;
-                    long chatId = message.Chat.Id;
-                    string messageText = message.Text ?? string.Empty;
-                    // Обработка команды /start
+                    chatId = message.Chat.Id;
+                    messageText = message.Text ?? string.Empty;
+                    username = user?.Username ?? user?.Id.ToString() ?? "N/A";
+
+                    // Обработка /start
                     if (messageText.Contains("/start"))
                     {
                         await botClient.SendTextMessageAsync(chatId,
@@ -82,12 +100,13 @@ namespace RequestBotLinux
                             "/help [Фамилия] [Кабинет] [Описание] [Срок]\n" +
                             "Пример:\n" +
                             "/help Иванов 404 Не работает принтер 3 дня");
+                        return; // Важно!
                     }
 
-                    // Обработка команды /help
+                    // Обработка /help
                     if (messageText.ToLower().StartsWith(taskHelp.ToLower()))
                     {
-                        var pattern = @"^/help\s+([^\d]+)\s+(\d+)\s+(.*?)(?:\s+(\d+)\s+(день|дня|дней|месяц|месяца|месяцев))?$";
+                        var pattern = @"^/help\s+([^\d]+?)\s+(\d+)\s+(.+?)(?:\s+(\d+)\s+(день|дня|дней|месяц|месяца|месяцев))?$";
                         var match = Regex.Match(messageText, pattern, RegexOptions.IgnoreCase);
 
                         if (match.Success)
@@ -107,39 +126,40 @@ namespace RequestBotLinux
                             }
 
                             await Database.AddTaskMessageAsync(
-                                new RequestBotLinux.Models.User
-                                {
-                                    Username = user.Username,
-                                    FirstName = user.FirstName,
-                                    LastName = "" // Добавьте значение по умолчанию, если требуется
-                                },
-                                chatId,
-                                lastName,
-                                cabinetNumber,
-                                description,
-                                deadline
-                            );
+        new RequestBotLinux.Models.User
+        {
+            Username = user.Username,
+            FirstName = user.FirstName,
+            LastName = ""
+        },
+        chatId,
+        lastName,
+        cabinetNumber,
+        description,
+        deadline
+    );
+
 
                             await botClient.SendTextMessageAsync(chatId, taskDone);
-                            return;
+                            return; // Прерываем выполнение после успешной обработки
                         }
                         else
                         {
                             await botClient.SendTextMessageAsync(chatId,
                                 "❌ Неверный формат!\nПример:\n/help Иванов 404 Описание проблемы 3 дня");
-                            return;
+                            return; // Ключевое исправление: добавляем return!
                         }
                     }
 
-                    // Сохранение обычного сообщения
+                    // Сохранение обычных сообщений (только если не было команд)
                     await Database.AddMessageAsync(
                         user.Username ?? user.Id.ToString(),
                         chatId,
                         messageText
                     );
 
-                    // Обновление UI
-                    Dispatcher.UIThread.Post(() =>
+                    // Обновление UI через диспетчер
+                    await Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
                             desktop.MainWindow is MainWindow mainWindow)
@@ -152,18 +172,62 @@ namespace RequestBotLinux
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex}");
-                Dispatcher.UIThread.Post(() =>
-                {
-                    MessageBoxManager.GetMessageBoxStandard(
-                        "Ошибка",
-                        $"Ошибка обработки: {ex.Message}",
-                        ButtonEnum.Ok,
-                        Icon.Error
-                    ).ShowAsync();
-                });
+                string errorDetails = GetFullExceptionDetails(ex);
+
+                string errorMessage = $"🛑 Произошла критическая ошибка при обработке сообщения\n\n" +
+                                      $"▫️ Чат: {chatId}\n" +
+                                      $"▫️ Пользователь: @{username}\n" +
+                                      $"▫️ Сообщение: {messageText?.Truncate(100) ?? "N/A"}\n\n" +
+                                      $"🔧 Детали ошибки:\n{errorDetails.Truncate(2000)}";
+
+                await ShowErrorPopup(errorMessage);
             }
         }
+
+        // Вспомогательные методы
+        private static string GetFullExceptionDetails(Exception ex)
+        {
+            var sb = new StringBuilder();
+            int level = 0;
+            Exception current = ex;
+
+            while (current != null)
+            {
+                sb.AppendLine($"【Уровень {level}】");
+                sb.AppendLine($"Тип: {current.GetType().FullName}");
+                sb.AppendLine($"Сообщение: {current.Message}");
+                sb.AppendLine($"Стек вызовов:\n{current.StackTrace?.Trim() ?? "N/A"}");
+                sb.AppendLine(new string('-', 40));
+                current = current.InnerException;
+                level++;
+            }
+            return sb.ToString();
+        }
+
+        private async Task ShowErrorPopup(string message)
+        {
+            await Dispatcher.UIThread.InvokeAsync(async () =>
+            {
+                var box = MessageBoxManager.GetMessageBoxStandard(
+                    new MessageBoxStandardParams
+                    {
+                        ContentTitle = "Ошибка обработки",
+                        ContentMessage = message,
+                        ButtonDefinitions = ButtonEnum.Ok,
+                        Icon = Icon.Error,
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                        MaxWidth = 800,
+                        MaxHeight = 600,
+                        CanResize = true
+                    });
+
+                await box.ShowAsync();
+            });
+        }
+
+        // Расширение для обрезания длинного текста
+        
+
         private DateTime CalculateDeadline(string urgencyValue, string urgencyUnit)
         {
             if (!int.TryParse(urgencyValue, out int value)) value = 1;

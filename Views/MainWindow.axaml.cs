@@ -1,4 +1,5 @@
 using System;
+using System.Data.Entity;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -12,18 +13,21 @@ namespace RequestBotLinux.Views
         {
             InitializeComponent();
             App.BotStatusChanged += OnBotStatusChanged;
-            App.Database.MessageAdded += () => LoadMessages();
+            App.Database.MessageAdded += () => Dispatcher.UIThread.InvokeAsync(LoadMessages);
             RefreshMessagesFromDb();
         }
 
         public void RefreshMessagesFromDb()
         {
-            var messages = App.Database.GetAllTasks()
-                .Select(t => $"[{t.Username}] {t.Timestamp}: {t.MessageText}");
-            if (MainContent.Content is MainFormInstance mainForm)
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
-                mainForm.UpdateMessages(string.Join(Environment.NewLine, messages));
-            }
+                var messages = App.Database.GetAllTasks()
+                    .Select(t => $"[{t.Username}] {t.Timestamp}: {t.MessageText}");
+                if (MainContent.Content is MainFormInstance mainForm)
+                {
+                    mainForm.UpdateMessages(string.Join(Environment.NewLine, messages));
+                }
+            });
         }
 
 
@@ -66,16 +70,19 @@ namespace RequestBotLinux.Views
         }
         public void LoadMessages()
         {
-            var messages = App.Database.GetAllTasks();
-            var messagesText = string.Join(
-                Environment.NewLine,
-                messages.Select(t => $"[{t.Username}] {t.Timestamp}: {t.MessageText}")
-            );
-
-            if (MainContent.Content is MainFormInstance mainForm)
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
-                mainForm.UpdateMessages(messagesText);
-            }
+                var messages = App.Database.GetAllTasks();
+                var messagesText = string.Join(
+                    Environment.NewLine,
+                    messages.Select(t => $"[{t.Username}] {t.Timestamp}: {t.MessageText}")
+                );
+
+                if (MainContent.Content is MainFormInstance mainForm)
+                {
+                    mainForm.UpdateMessages(messagesText);
+                }
+            });
         }
         public void LoadUsers()
         {
@@ -103,7 +110,7 @@ namespace RequestBotLinux.Views
         }
         private void OnAnalyticsButtonClicked(object sender, RoutedEventArgs e)
         {
-            var analyticsWindow = new AnalyticsView();
+            var analyticsWindow = new AnalyticsView(App.Database);
             MainContent.Content = analyticsWindow;
         }
     }
