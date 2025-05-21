@@ -7,6 +7,7 @@ using LiveChartsCore.SkiaSharpView.Painting;
 using Microsoft.AspNetCore.Hosting.Server;
 using RequestBotLinux.Models;
 using SkiaSharp;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -69,7 +70,9 @@ public partial class AnalyticsView : UserControl
 
     private string GetCurrentStatusFilter()
     {
-        return _statusFilterComboBox.SelectedItem?.ToString() ?? "Все";
+        if (_statusFilterComboBox.SelectedItem is ComboBoxItem selectedItem)
+            return selectedItem.Content?.ToString() ?? "Все";
+        return "Все";
     }
 
     private void UpdateStatusChart(string statusFilter)
@@ -79,7 +82,6 @@ public partial class AnalyticsView : UserControl
 
         if (stats.Count == 0)
         {
-            // Добавляем заглушку, если данных нет
             series.Add(new PieSeries<int>
             {
                 Values = new[] { 1 },
@@ -97,7 +99,8 @@ public partial class AnalyticsView : UserControl
                     Name = stat.Key,
                     DataLabelsPaint = new SolidColorPaint(SKColors.Black),
                     DataLabelsPosition = LiveChartsCore.Measure.PolarLabelsPosition.Outer,
-                    DataLabelsFormatter = point => $"{point.StackedValue.Share:P1}",
+                    // Изменено P1 на P2 для двух знаков после запятой
+                    DataLabelsFormatter = point => $"{point.StackedValue.Share:P2}",
                     Fill = new SolidColorPaint(GetColorForStatus(stat.Key))
                 });
             }
@@ -105,32 +108,20 @@ public partial class AnalyticsView : UserControl
 
         _statusChart.Series = series;
     }
-    private SKColor GetColorForStatus(string status)
-    {
-        return status switch
-        {
-            "Завершено" => SKColors.LightGreen,
-            "В работе" => SKColors.Orange,
-            _ => SKColors.Gray
-        };
-    }
-
-
     private void UpdateCabinetChart(string statusFilter)
     {
         var cabinetStats = GetCabinetStatistics(statusFilter);
 
-        // Используйте тип double вместо object
-        var series = new ColumnSeries<double> // <-- Измените здесь
+        var series = new ColumnSeries<double>
         {
-            Values = cabinetStats.Select(c => c.Value).ToArray(), // <-- Уберите приведение к object
+            Values = cabinetStats.Select(c => c.Value).ToArray(),
             Name = "Задачи",
             DataLabelsPaint = new SolidColorPaint(SKColors.Black),
             DataLabelsPosition = LiveChartsCore.Measure.DataLabelsPosition.Top,
-            DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue}%"
+            // Форматирование с двумя знаками после запятой
+            DataLabelsFormatter = point => $"{point.Coordinate.PrimaryValue:N2}%"
         };
 
-        // Остальной код остается без изменений
         _cabinetChart.XAxes = new List<Axis>
     {
         new Axis
@@ -153,14 +144,29 @@ public partial class AnalyticsView : UserControl
         _cabinetChart.Series = new List<ISeries> { series };
     }
 
+    private SKColor GetColorForStatus(string status)
+    {
+        return status switch
+        {
+            "Завершено" => SKColors.LightGreen,
+            "В работе" => SKColors.Orange,
+            _ => SKColors.Gray
+        };
+    }
+
     private Dictionary<string, int> GetStatusStatistics(string filter)
     {
         var allTasks = _database.GetAllTasks();
-        var filtered = allTasks.Where(t =>
+
+        var filteredByTime = allTasks.Where(t =>
+            _currentTimeFilter == "month"
+                ? t.Timestamp >= DateTime.Now.AddMonths(-1)
+                : t.Timestamp >= DateTime.Now.AddDays(-7));
+
+        var filtered = filteredByTime.Where(t =>
             filter == "Все" ||
             (filter == "Завершено" && t.Status == "Завершено") ||
-            (filter == "Не завершено" && t.Status != "Завершено")
-        );
+            (filter == "Не завершено" && t.Status != "Завершено"));
 
         return filtered
             .GroupBy(t => t.Status)
@@ -170,9 +176,20 @@ public partial class AnalyticsView : UserControl
     private Dictionary<string, double> GetCabinetStatistics(string filter)
     {
         var allTasks = _database.GetAllTasks();
-        var total = allTasks.Count;
 
-        return allTasks
+        var filteredByTime = allTasks.Where(t =>
+            _currentTimeFilter == "month"
+                ? t.Timestamp >= DateTime.Now.AddMonths(-1)
+                : t.Timestamp >= DateTime.Now.AddDays(-7));
+
+        var filteredByStatus = filteredByTime.Where(t =>
+            filter == "Все" ||
+            (filter == "Завершено" && t.Status == "Завершено") ||
+            (filter == "Не завершено" && t.Status != "Завершено"));
+
+        var total = filteredByStatus.Count();
+
+        return filteredByStatus
             .GroupBy(t => t.CabinetNumber)
             .ToDictionary(
                 g => g.Key,

@@ -18,7 +18,10 @@
 		<!-- Вкладки -->
 		<TabControl DockPanel.Dock="Top">
 			<!-- Вкладка статусов -->
-			<TabItem Header="Статусы задач">
+			<TabItem Header="Статусы задач"
+             ToolTip.Tip="Отображает доли задач в каждом статусе относительно общего количества"
+             ToolTip.Placement="Bottom"
+             ToolTip.ShowDelay="300">
 				<Border x:Name="StatusChartContainer"
                         BorderBrush="Gray"
                         BorderThickness="1"
@@ -28,7 +31,10 @@
 			</TabItem>
 
 			<!-- Вкладка кабинетов -->
-			<TabItem Header="Кабинеты">
+			<TabItem Header="Кабинеты"
+             ToolTip.Tip="Показывает, какой процент задач приходится на каждый кабинет за выбранный период"
+             ToolTip.Placement="Bottom"
+             ToolTip.ShowDelay="300">
 				<Grid Margin="10">
 					<Grid.RowDefinitions>
 						<RowDefinition Height="Auto"/>

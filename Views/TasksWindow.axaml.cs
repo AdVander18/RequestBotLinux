@@ -1,10 +1,14 @@
 using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.VisualTree;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 using RequestBotLinux.Models;
 
 namespace RequestBotLinux;
@@ -17,9 +21,11 @@ public partial class TasksWindow : UserControl
         LoadTasks();
 
         // Подписка на события
+        listViewTasks.DoubleTapped += OnTaskDoubleTapped;
         listViewTasks.SelectionChanged += OnTaskSelected;
         btnDeleteTask.Click += BtnDeleteTask_Click;
     }
+
     private void LoadTasks()
     {
         listViewTasks.Items.Clear();
@@ -27,46 +33,80 @@ public partial class TasksWindow : UserControl
 
         foreach (var task in tasks)
         {
-            // Создаем контейнер с индикатором и текстом
-            var stack = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 8 };
+            var stack = new StackPanel
+            {
+                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                Spacing = 8,
+                Tag = task.Id
+            };
 
-            // Индикатор статуса
-            var indicator = new Ellipse
+            // Основной индикатор СЛЕВА (зелёный/красный/прозрачный)
+            var mainIndicator = new Ellipse
             {
                 Width = 12,
                 Height = 12,
-                Fill = GetIndicatorBrush(task),
+                Fill = GetIndicatorBrush(task), // Теперь учитывает и статус и время
                 Margin = new Thickness(0, 0, 5, 0)
             };
 
-            // Текст задачи
             var textBlock = new TextBlock
             {
                 Text = task.MessageText,
                 Foreground = GetTextColor(task)
             };
 
-            stack.Children.Add(indicator);
+            stack.Children.Add(mainIndicator);
             stack.Children.Add(textBlock);
 
             listViewTasks.Items.Add(stack);
         }
     }
+
+
+
     // Определение цвета индикатора
     private IBrush GetIndicatorBrush(TaskData task)
     {
+        // Приоритет статуса "Завершено"
         if (task.Status == "Завершено")
             return Brushes.Green;
 
+        // Проверка просрочки
         var totalDuration = task.Deadline - task.Timestamp;
         var remainingTime = task.Deadline - DateTime.Now;
 
         if (remainingTime.TotalSeconds < 0 ||
-            (remainingTime.TotalSeconds / totalDuration.TotalSeconds) < 0.1)
+            (totalDuration.TotalSeconds > 0 &&
+             remainingTime.TotalSeconds / totalDuration.TotalSeconds < 0.1))
+        {
             return Brushes.Red;
+        }
 
         return Brushes.Transparent;
     }
+
+
+
+    private void OnTaskDoubleTapped(object sender, RoutedEventArgs e)
+    {
+        var source = e.Source as Control;
+        if (source == null) return;
+
+        var listBoxItem = source.FindAncestorOfType<ListBoxItem>();
+        if (listBoxItem != null && listBoxItem.Content is StackPanel stackPanel)
+        {
+            int taskId = (int)stackPanel.Tag;
+            var task = App.Database.GetAllTasks().FirstOrDefault(t => t.Id == taskId);
+            if (task != null)
+            {
+                // Переключаем статус
+                var newStatus = task.Status == "Завершено" ? "В работе" : "Завершено";
+                App.Database.UpdateTaskStatus(taskId, newStatus);
+                LoadTasks(); // Обновляем список
+            }
+        }
+    }
+
     // Цвет текста для срочных задач
     private IBrush GetTextColor(TaskData task)
     {
@@ -107,13 +147,44 @@ public partial class TasksWindow : UserControl
         textBoxMessages.Text = info;
     }
 
-    private void BtnDeleteTask_Click(object sender, RoutedEventArgs e)
+    private async void BtnDeleteTask_Click(object sender, RoutedEventArgs e)
     {
-        if (listViewTasks.SelectedIndex == -1) return;
+        // Проверка, выбрана ли задача
+        if (listViewTasks.SelectedIndex == -1)
+        {
+            var errorBox = MsBox.Avalonia.MessageBoxManager.GetMessageBoxStandard(
+                new MsBox.Avalonia.Dto.MessageBoxStandardParams
+                {
+                    ContentTitle = "Ошибка",
+                    ContentMessage = "Пожалуйста, выберите задачу для удаления.",
+                    ButtonDefinitions = ButtonEnum.Ok,
+                    Icon = Icon.Error,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                });
+
+            await errorBox.ShowWindowDialogAsync(TopLevel.GetTopLevel(this) as Window);
+            return;
+        }
 
         var selectedTask = App.Database.GetAllTasks()[listViewTasks.SelectedIndex];
-        App.Database.DeleteTask(selectedTask.Id);
-        LoadTasks(); // Обновление списка
-        textBoxMessages.Text = string.Empty;
+
+        var messageBox = MsBox.Avalonia.MessageBoxManager.GetMessageBoxStandard(
+            new MsBox.Avalonia.Dto.MessageBoxStandardParams
+            {
+                ButtonDefinitions = ButtonEnum.YesNo,
+                ContentTitle = "Подтверждение удаления",
+                ContentMessage = "Вы уверены, что хотите удалить задачу?",
+                Icon = Icon.Question,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            });
+
+        var result = await messageBox.ShowWindowDialogAsync(TopLevel.GetTopLevel(this) as Window);
+
+        if (result == ButtonResult.Yes)
+        {
+            App.Database.DeleteTask(selectedTask.Id);
+            LoadTasks();
+            textBoxMessages.Text = string.Empty;
+        }
     }
 }

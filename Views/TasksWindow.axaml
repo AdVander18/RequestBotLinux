@@ -4,9 +4,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="RequestBotLinux.TasksWindow">
-	<Grid ColumnDefinitions="300,*" RowDefinitions="*,Auto" Margin="10">
+	<Grid ColumnDefinitions="300,5,*" RowDefinitions="*,Auto" Margin="10">
 		<!-- Левая часть: список задач -->
-		<Border Grid.Column="0" Background="#14172D" CornerRadius="8" Margin="0 0 10 0">
+		<Border Grid.Column="0" Background="#14172D" CornerRadius="8">
 			<StackPanel>
 				<TextBlock x:Name="tbTitle"
                            Text="Задачи"
@@ -18,9 +18,18 @@
 			</StackPanel>
 		</Border>
 
+		<!-- Разделитель для изменения ширины -->
+		<GridSplitter Grid.Column="1"
+                      Width="5"
+                      Background="Transparent"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      ResizeDirection="Columns"
+                      ShowsPreview="False"/>
+
 		<!-- Правая часть: детали задачи -->
 		<TextBox x:Name="textBoxMessages"
-                 Grid.Column="1"
+                 Grid.Column="2"
                  IsReadOnly="True"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"

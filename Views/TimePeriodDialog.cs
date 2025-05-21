@@ -17,6 +17,7 @@ namespace RequestBotLinux.Views
             this.Width = 150;
             this.Height = 330;
             this.Title = "Выберите период";
+            WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
             var stack = new StackPanel
             {
