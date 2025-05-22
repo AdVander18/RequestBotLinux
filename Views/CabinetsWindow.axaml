@@ -13,7 +13,7 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10">
             <Button Content="Добавить кабинет" Click="OnAddCabinetClick"/>
             <Button Content="Редактировать" Click="OnEditCabinetClick"/>
-            <Button Content="Экспорт в Excel"/>
+            <Button Content="Экспорт в Excel" Click="OnExportToExcelClick"/>
         </StackPanel>
 
         <!-- Упрощенный TreeView без привязок -->

@@ -14,6 +14,8 @@ using Avalonia.Data;
 using Avalonia.Media;
 using Avalonia.Data.Converters;
 using System.Globalization;
+using ClosedXML.Excel;
+using System.IO;
 using System;
 
 namespace RequestBotLinux;
@@ -648,9 +650,6 @@ public partial class CabinetsWindow : UserControl
         if (info.Type == NodeType.Employees || info.Type == NodeType.Equipment)
             return;
 
-
-
-
         switch (info.Type)
         {
             case NodeType.Employees:
@@ -859,6 +858,108 @@ public partial class CabinetsWindow : UserControl
         }
     }
 
+    private async void OnExportToExcelClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var cabinets = App.Database.GetAllCabinets();
+            if (cabinets.Count == 0)
+            {
+                await MessageBoxManager.GetMessageBoxStandard("Информация", "Нет данных для экспорта")
+                    .ShowWindowDialogAsync((Window)VisualRoot);
+                return;
+            }
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Кабинеты");
+                int row = 1;
+
+                // Заголовки
+                worksheet.Cell(row, 1).Value = "Номер кабинета";
+                worksheet.Cell(row, 2).Value = "Описание кабинета";
+                worksheet.Cell(row, 3).Value = "Тип";
+                worksheet.Cell(row, 4).Value = "Имя/Тип оборудования";
+                worksheet.Cell(row, 5).Value = "Должность/Модель";
+                worksheet.Cell(row, 6).Value = "ОС";
+
+                // Стилизация заголовков
+                var headerRange = worksheet.Range(row, 1, row, 6);
+                headerRange.Style.Font.Bold = true;
+                headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+                headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                headerRange.Style.Border.BottomBorder = XLBorderStyleValues.Medium;
+
+                // Фиксированные заголовки
+                worksheet.SheetView.FreezeRows(1);
+
+                // Автофильтры
+                worksheet.Range(row, 1, row, 6).SetAutoFilter();
+
+                row++;
+
+
+                foreach (var cab in cabinets)
+                {
+                    // Строка для кабинета
+                    worksheet.Cell(row, 1).Value = cab.Number;
+                    worksheet.Cell(row, 2).Value = cab.Description;
+                    worksheet.Cell(row, 3).Value = "Кабинет";
+                    row++;
+
+                    // Сотрудники
+                    var employees = App.Database.GetEmployeesForCabinet(cab.Id);
+                    foreach (var emp in employees)
+                    {
+                        worksheet.Cell(row, 1).Value = cab.Number;
+                        worksheet.Cell(row, 2).Value = cab.Description;
+                        worksheet.Cell(row, 3).Value = "Сотрудник";
+                        worksheet.Cell(row, 4).Value = $"{emp.FirstName} {emp.LastName}";
+                        worksheet.Cell(row, 5).Value = emp.Position;
+                        row++;
+                    }
+
+                    // Оборудование
+                    var equipment = App.Database.GetEquipmentForCabinet(cab.Id);
+                    foreach (var eq in equipment)
+                    {
+                        worksheet.Cell(row, 1).Value = cab.Number;
+                        worksheet.Cell(row, 2).Value = cab.Description;
+                        worksheet.Cell(row, 3).Value = "Оборудование";
+                        worksheet.Cell(row, 4).Value = eq.Type;
+                        worksheet.Cell(row, 5).Value = eq.Model;
+                        worksheet.Cell(row, 6).Value = eq.OS ?? string.Empty;
+                        row++;
+                    }
+
+                    // Пустая строка для разделения
+                    row++;
+                }
+
+                // Динамическая ширина колонок
+                worksheet.Columns().AdjustToContents();
+
+                // Диалог сохранения
+                var saveFileDialog = new SaveFileDialog();
+                saveFileDialog.Title = "Сохранить Excel файл";
+                saveFileDialog.Filters.Add(new FileDialogFilter { Name = "Excel Files", Extensions = { "xlsx" } });
+
+                var filePath = await saveFileDialog.ShowAsync((Window)VisualRoot);
+
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    workbook.SaveAs(filePath);
+                    await MessageBoxManager.GetMessageBoxStandard("Успех", "Данные экспортированы в Excel!")
+                        .ShowWindowDialogAsync((Window)VisualRoot);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await MessageBoxManager.GetMessageBoxStandard("Ошибка", $"Ошибка экспорта: {ex.Message}")
+                .ShowWindowDialogAsync((Window)VisualRoot);
+        }
+    }
 
     public class NodeInfo
     {

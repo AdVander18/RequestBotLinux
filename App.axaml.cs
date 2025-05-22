@@ -58,7 +58,7 @@ namespace RequestBotLinux
 
             try
             {
-                _botClient = new TelegramBotClient("");
+                _botClient = new TelegramBotClient("7299350943:AAGnUiWRM_pzS_emlIF_EodBotbxac4F5QI");
                 var receiverOptions = new ReceiverOptions();
 
                 _botClient.StartReceiving(
