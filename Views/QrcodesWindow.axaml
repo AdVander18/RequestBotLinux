@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="300"
+             x:Class="RequestBotLinux.QrcodesWindow">
+	<StackPanel Spacing="100" Margin="20">
+		<!-- Первый QR-код для телеграм-бота -->
+		<StackPanel Spacing="10">
+			<TextBlock Text="QrCode для перехода в телеграм-бота"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"/>
+
+			<Image Source="/Assets/Images/telegram_qr.png"
+                   Width="200"
+                   Height="200"
+                   Stretch="Uniform"/>
+		</StackPanel>
+
+		<!-- Второй QR-код для связи с автором -->
+		<StackPanel Spacing="10">
+			<TextBlock Text="QrCode для перехода к автору данного проекта, и для обратной связи"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       TextWrapping="Wrap"/>
+
+			<Image Source="/Assets/Images/author_qr.png"
+                   Width="200"
+                   Height="200"
+                   Stretch="Uniform"/>
+		</StackPanel>
+	</StackPanel>
+</UserControl>

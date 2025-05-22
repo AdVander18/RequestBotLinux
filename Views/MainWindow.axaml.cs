@@ -113,5 +113,15 @@ namespace RequestBotLinux.Views
             var analyticsWindow = new AnalyticsView(App.Database);
             MainContent.Content = analyticsWindow;
         }
+        private void OnFAQButtonClicked(object sender, RoutedEventArgs e)
+        {
+            var faqWindow = new FAQWindow();
+            MainContent.Content = faqWindow;
+        }
+        private void OnQRButtonClicked(object sender, RoutedEventArgs e)
+        {
+            var qrWindow = new QrcodesWindow();
+            MainContent.Content = qrWindow;
+        }
     }
 }

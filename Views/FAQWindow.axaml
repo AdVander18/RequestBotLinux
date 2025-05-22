@@ -1,0 +1,147 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="RequestBotLinux.FAQWindow">
+	<ScrollViewer VerticalScrollBarVisibility="Auto">
+		<StackPanel Margin="20" Spacing="15">
+			<TextBlock FontSize="18" FontWeight="Bold" Text="Часто задаваемые вопросы"/>
+
+			<!-- Question 1 -->
+			<StackPanel Spacing="5">
+				<TextBlock FontWeight="Bold" Text="1. Как начать работу с ботом?"/>
+				<TextBlock TextWrapping="Wrap" Text="Команда /start: Отправьте /start боту, чтобы получить список доступных команд и инструкции."/>
+				<Border Background="{DynamicResource PrimaryHoverBackground}"
+                        CornerRadius="4"
+                        Padding="10"
+                        Margin="10 5">
+					<StackPanel Spacing="3">
+						<TextBlock FontFamily="Courier New" Text="*Добро пожаловать! Доступные команды:&#10;/help [ФИО] [Кабинет] [Описание] [Срок]&#10;Пример: /help Иванов 404 Поломка принтера 3 дня*"/>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+			
+			<!-- Question 2 -->
+			<StackPanel Spacing="5">
+				<TextBlock FontWeight="Bold" Text="2. Как создать задачу?"/>
+				<TextBlock TextWrapping="Wrap" Text="Команда /help: Используйте формат:"/>
+				<TextBlock FontFamily="Courier New" Margin="10 0" Text="/help Фамилия Номер_кабинета Описание_проблемы Срок"/>
+				<TextBlock Margin="10 0" Text="Срок можно указывать в днях (день, дня, дней) или месяцах (месяц)"/>
+			</StackPanel>
+
+			<!-- Question 3 -->
+			<StackPanel Spacing="5">
+				<TextBlock FontWeight="Bold" Text="3. Как проверить статус задачи?"/>
+				<TextBlock Text="Интерфейс приложения: Перейдите в раздел «Задачи» → статусы:"/>
+				<StackPanel Margin="10 5" Spacing="3">
+					<TextBlock Margin="10 0" Text="• «В работе»"/>
+					<TextBlock Margin="10 0" Text="• «Выполнено»"/>
+					<TextBlock Margin="10 0" Text="• «Просрочено»"/>
+				</StackPanel>
+			</StackPanel>
+
+			<!-- Question 4 -->
+			<StackPanel Spacing="5">
+				<TextBlock FontWeight="Bold" Text="4. Как управлять кабинетами и сотрудниками?"/>
+				<Border Background="{DynamicResource PrimaryHoverBackground}"
+                        CornerRadius="4"
+                        Padding="10"
+                        Margin="10 5">
+					<StackPanel Spacing="3">
+						<TextBlock Text="• Добавить кабинет: Укажите номер и описание"/>
+						<TextBlock Text="• Добавить сотрудника: Привяжите к кабинету, укажите ФИО и должность"/>
+						<TextBlock Text="• Оборудование: Добавляйте технику с характеристиками (например, ОС для компьютеров)"/>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+
+			<!-- Question 5 -->
+			<StackPanel Spacing="5">
+				<TextBlock FontWeight="Bold" Text="5. Как общаться с пользователями через интерфейс?"/>
+				<Border Background="{DynamicResource PrimaryHoverBackground}"
+                        CornerRadius="4"
+                        Padding="10">
+					<StackPanel Spacing="5">
+						<TextBlock Text="1. Выберите пользователя из списка"/>
+						<TextBlock Text="2. Напишите сообщение и нажмите «Отправить»"/>
+						<TextBlock FontFamily="Courier New"
+                                   Text="[2023-10-01] [ADMIN] Ваше сообщение здесь"
+                                   Foreground="{DynamicResource PrimaryForeground}"/>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+
+			<!-- Question 6 -->
+			<StackPanel Spacing="5">
+				<TextBlock FontWeight="Bold" Text="6. Аналитика и отчеты"/>
+				<TextBlock TextWrapping="Wrap" Text="Раздел «Аналитика»:"/>
+				<StackPanel Margin="10 5" Spacing="3">
+					<TextBlock Text="• Статусы задач: График распределения по статусам"/>
+					<TextBlock Text="• Кабинеты: Доля задач по кабинетам"/>
+					<TextBlock Text="• Фильтры: Данные за неделю/месяц"/>
+				</StackPanel>
+			</StackPanel>
+
+			<!-- Question 7 -->
+			<StackPanel Spacing="5">
+				<TextBlock FontWeight="Bold" Text="7. Частые проблемы и решения"/>
+				<StackPanel Margin="10 5" Spacing="5">
+					<TextBlock Text="Задача не создается:"/>
+					<TextBlock Margin="15 0" Text="• Проверьте формат команды"/>
+					<TextBlock Margin="15 0" Text="• Убедитесь в существовании кабинета"/>
+
+					<TextBlock Text="Сообщения не отправляются:"/>
+					<TextBlock Margin="15 0" Text="• Проверьте подключение к интернету"/>
+				</StackPanel>
+			</StackPanel>
+
+			<!-- Question 8 -->
+			<StackPanel Spacing="5">
+				<TextBlock FontWeight="Bold" Text="8. Как удалить старые сообщения?"/>
+				<StackPanel Margin="10 5" Spacing="3">
+					<TextBlock Text="1. Перейдите в раздел «Домой»"/>
+					<TextBlock Text="2. Выберите пользователя → «Удалить»"/>
+					<TextBlock Text="3. Укажите период (например, «Месяц»)"/>
+				</StackPanel>
+			</StackPanel>
+
+			<!-- Question 9 -->
+			<StackPanel Spacing="5">
+				<TextBlock FontWeight="Bold" Text="9. Экспорт данных в Excel"/>
+				<TextBlock TextWrapping="Wrap" Text="• Нажмите «Экспорт в Excel» в разделе «Кабинеты»"/>
+				<TextBlock Text="• Сохраняемые колонки:"/>
+				<Border Background="{DynamicResource PrimaryHoverBackground}"
+                        CornerRadius="4"
+                        Padding="10"
+                        Margin="10 5">
+					<StackPanel Spacing="3">
+						<TextBlock FontFamily="Courier New" Text="Номер кабинета | Описание | Тип | Оборудование | Модель | ОС"/>
+					</StackPanel>
+				</Border>
+			</StackPanel>
+
+			<!-- Question 10 -->
+			<StackPanel Spacing="5">
+				<TextBlock FontWeight="Bold" Text="10. Важные настройки"/>
+				<TextBlock TextWrapping="Wrap" Text="Темы: Измените в настройках ⚙"/>
+				<TextBlock Margin="10 5" Text="• Кнопка 'Удалить все данные'"/>
+			</StackPanel>
+
+		</StackPanel>
+	</ScrollViewer>
+	<UserControl.Styles>
+		<Style Selector="TextBlock">
+			<Setter Property="FontSize" Value="14"/>
+			<Setter Property="TextWrapping" Value="Wrap"/>
+			<Setter Property="Foreground" Value="{DynamicResource PrimaryForeground}"/>
+		</Style>
+
+		<Style Selector="Border.info-block">
+			<Setter Property="Background" Value="{DynamicResource PrimaryHoverBackground}"/>
+			<Setter Property="CornerRadius" Value="4"/>
+			<Setter Property="Padding" Value="10"/>
+			<Setter Property="Margin" Value="10 5"/>
+		</Style>
+	</UserControl.Styles>
+</UserControl>

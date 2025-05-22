@@ -46,13 +46,13 @@
 							<Label Content="Аналитика"></Label>
 						</StackPanel>
 					</Button>
-					<Button HorizontalAlignment="Stretch">
+					<Button HorizontalAlignment="Stretch" Click="OnFAQButtonClicked">
 						<StackPanel Orientation="Horizontal">
 							<Label Classes="icon" Content="&#xe3e8;"></Label>
 							<Label Content="FAQ"></Label>
 						</StackPanel>
 					</Button>
-					<Button HorizontalAlignment="Stretch">
+					<Button HorizontalAlignment="Stretch" Click="OnQRButtonClicked">
 						<StackPanel Orientation="Horizontal">
 							<Label Classes="icon" Content="&#xe3e6;"></Label>
 							<Label Content="QR-Code"></Label>
