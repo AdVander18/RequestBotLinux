@@ -1,8 +1,11 @@
 using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
+using Avalonia.Data.Converters;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
@@ -13,54 +16,77 @@ using RequestBotLinux.Models;
 
 namespace RequestBotLinux;
 
+public class TaskStatusToBrushConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+    {
+        if (value is not TaskData task) return Brushes.Transparent;
+
+        if (task.Status == "Завершено") return Brushes.Green;
+
+        var remaining = task.Deadline - DateTime.Now;
+        var total = task.Deadline - task.Timestamp;
+        return remaining.TotalSeconds < 0 || (total.TotalSeconds > 0 && remaining.TotalSeconds / total.TotalSeconds < 0.1)
+            ? Brushes.Red
+            : Brushes.Transparent;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
+public class TaskTextColorConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter,
+                        System.Globalization.CultureInfo culture)
+    {
+        if (value is not TaskData task)
+            return Application.Current.FindResource("TextControlForeground");
+
+        var remaining = task.Deadline - DateTime.Now;
+        var total = task.Deadline - task.Timestamp;
+
+        return remaining.TotalSeconds < 0 ||
+              (total.TotalSeconds > 0 && remaining.TotalSeconds / total.TotalSeconds < 0.1)
+            ? Brushes.Red
+            : Application.Current.FindResource("TextControlForeground");
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter,
+                            System.Globalization.CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
 public partial class TasksWindow : UserControl
 {
+    public ObservableCollection<TaskData> Tasks { get; } = new();
     public TasksWindow()
     {
         InitializeComponent();
+        DataContext = this;
         LoadTasks();
 
-        // Подписка на события
         listViewTasks.DoubleTapped += OnTaskDoubleTapped;
         listViewTasks.SelectionChanged += OnTaskSelected;
         btnDeleteTask.Click += BtnDeleteTask_Click;
     }
 
+
     private void LoadTasks()
     {
-        listViewTasks.Items.Clear();
+        Tasks.Clear();
         var tasks = App.Database.GetAllTasks();
 
+        // Временная проверка
+        Debug.WriteLine($"Loaded tasks count: {tasks.Count}");
         foreach (var task in tasks)
         {
-            var stack = new StackPanel
-            {
-                Orientation = Avalonia.Layout.Orientation.Horizontal,
-                Spacing = 8,
-                Tag = task.Id
-            };
-
-            // Основной индикатор СЛЕВА (зелёный/красный/прозрачный)
-            var mainIndicator = new Ellipse
-            {
-                Width = 12,
-                Height = 12,
-                Fill = GetIndicatorBrush(task), // Теперь учитывает и статус и время
-                Margin = new Thickness(0, 0, 5, 0)
-            };
-
-            var textBlock = new TextBlock
-            {
-                Text = task.MessageText,
-                Foreground = GetTextColor(task)
-            };
-
-            stack.Children.Add(mainIndicator);
-            stack.Children.Add(textBlock);
-
-            listViewTasks.Items.Add(stack);
+            Debug.WriteLine($"Task: {task.MessageText}");
         }
+
+        foreach (var task in tasks) Tasks.Add(task);
     }
+
 
 
 
@@ -89,23 +115,14 @@ public partial class TasksWindow : UserControl
 
     private void OnTaskDoubleTapped(object sender, RoutedEventArgs e)
     {
-        var source = e.Source as Control;
-        if (source == null) return;
-
-        var listBoxItem = source.FindAncestorOfType<ListBoxItem>();
-        if (listBoxItem != null && listBoxItem.Content is StackPanel stackPanel)
+        if (listViewTasks.SelectedItem is TaskData selectedTask)
         {
-            int taskId = (int)stackPanel.Tag;
-            var task = App.Database.GetAllTasks().FirstOrDefault(t => t.Id == taskId);
-            if (task != null)
-            {
-                // Переключаем статус
-                var newStatus = task.Status == "Завершено" ? "В работе" : "Завершено";
-                App.Database.UpdateTaskStatus(taskId, newStatus);
-                LoadTasks(); // Обновляем список
-            }
+            var newStatus = selectedTask.Status == "Завершено" ? "В работе" : "Завершено";
+            App.Database.UpdateTaskStatus(selectedTask.Id, newStatus);
+            LoadTasks();
         }
     }
+
 
     // Цвет текста для срочных задач
     private IBrush GetTextColor(TaskData task)
@@ -122,27 +139,17 @@ public partial class TasksWindow : UserControl
 
     private void OnTaskSelected(object sender, SelectionChangedEventArgs e)
     {
-        if (listViewTasks.SelectedIndex == -1) return;
+        if (listViewTasks.SelectedItem is not TaskData selectedTask) return;
 
-        var selectedTask = App.Database.GetAllTasks()[listViewTasks.SelectedIndex];
         var info = $"ID: {selectedTask.Id}\n" +
-            $"Пользователь: {selectedTask.Username}\n" +
-            $"Имя: {selectedTask.FirstName}\n" +
+                   $"Пользователь: {selectedTask.Username}\n" +
+                   $"Имя: {selectedTask.FirstName}\n" +
             $"Фамилия: {selectedTask.LastName}\n" +
             $"Кабинет: {selectedTask.CabinetNumber}\n" +
             $"Описание: {selectedTask.MessageText}\n" +
             $"Статус: {selectedTask.Status}\n" +
             $"Дата создания задачи: {selectedTask.Timestamp:dd.MM.yyyy HH:mm}\n" +
-            $"Дедлайн: {selectedTask.Deadline:dd.MM.yyyy HH:mm}";
-
-        // Добавляем предупреждение, если задача срочная
-        var totalDuration = selectedTask.Deadline - selectedTask.Timestamp;
-        var remainingTime = selectedTask.Deadline - DateTime.Now;
-        if (remainingTime.TotalSeconds > 0 &&
-            (remainingTime.TotalSeconds / totalDuration.TotalSeconds) < 0.1)
-        {
-            info += "\nВнимание! До дедлайна осталось менее 10% времени!";
-        }
+                   $"Дедлайн: {selectedTask.Deadline:dd.MM.yyyy HH:mm}";
 
         textBoxMessages.Text = info;
     }

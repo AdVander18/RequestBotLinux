@@ -8,21 +8,52 @@
 	<Application.Styles>
 		<FluentTheme />
 		<StyleInclude Source="Styles/AppDefaultStyles.axaml"> </StyleInclude>
-	</Application.Styles>
-	
+		<!-- Общие стили для текста -->
+		<Style Selector="TextBlock">
+			<Setter Property="Foreground" Value="{DynamicResource TextControlForeground}"/>
+		</Style>
 
+		<!-- Стили для ListBox -->
+		<Style Selector="ListBox">
+			<Setter Property="Background" Value="{DynamicResource PrimaryBackground}"/>
+			<Setter Property="BorderBrush" Value="{DynamicResource PrimaryHoverBackground}"/>
+		</Style>
+
+		<Style Selector="ListBoxItem">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="BorderBrush" Value="{DynamicResource PrimaryHoverBackground}"/>
+		</Style>
+	</Application.Styles>
 	<Application.Resources>
-		<CornerRadius x:Key="ButtonCornerRadius">5</CornerRadius>
-		<SolidColorBrush x:Key="PrimaryForeground">#CFCFCF</SolidColorBrush>
-		<SolidColorBrush x:Key="PrimaryBackground">#14172D</SolidColorBrush>
-		<LinearGradientBrush x:Key="PrimaryBackgroundGradient" StartPoint="0%, 0%" EndPoint="100%, 0%">
+		<!-- Тёмная тема -->
+		<SolidColorBrush x:Key="DarkPrimaryForeground">#CFCFCF</SolidColorBrush>
+		<SolidColorBrush x:Key="DarkPrimaryBackground">#14172D</SolidColorBrush>
+		<SolidColorBrush x:Key="TextControlForeground" Color="{DynamicResource SystemBaseHighColor}"/>
+		<SolidColorBrush x:Key="TextSecondaryBrush" Color="{DynamicResource SystemChromeGrayColor}"/>
+		<LinearGradientBrush x:Key="DarkPrimaryBackgroundGradient" StartPoint="0%,0%" EndPoint="100%,0%">
 			<GradientStop Offset="0" Color="#111214"/>
 			<GradientStop Offset="1" Color="#151E3E"/>
 		</LinearGradientBrush>
+		<SolidColorBrush x:Key="DarkPrimaryHoverBackground">#333B5A</SolidColorBrush>
 
-		<SolidColorBrush x:Key="PrimaryHoverBackground">#333B5A</SolidColorBrush>
-		<SolidColorBrush x:Key="PrimaryHoverForeground">White</SolidColorBrush>
+		<!-- Светлая тема -->
+		<SolidColorBrush x:Key="LightPrimaryForeground">#000000</SolidColorBrush>
+		<SolidColorBrush x:Key="LightPrimaryBackground">#FFFFFF</SolidColorBrush>
+		<LinearGradientBrush x:Key="LightPrimaryBackgroundGradient" StartPoint="0%,0%" EndPoint="100%,0%">
+			<GradientStop Offset="0" Color="#F0F0F0"/>
+			<GradientStop Offset="1" Color="#E0E0E0"/>
+		</LinearGradientBrush>
+		<SolidColorBrush x:Key="LightPrimaryHoverBackground">#DDDDDD</SolidColorBrush>
 
+		<!-- Активные ресурсы (будут переключаться) -->
+		<SolidColorBrush x:Key="PrimaryForeground"/>
+		<SolidColorBrush x:Key="PrimaryBackground"/>
+		<LinearGradientBrush x:Key="PrimaryBackgroundGradient"/>
+		<SolidColorBrush x:Key="PrimaryHoverBackground"/>
+	</Application.Resources>
+
+	<Application.Resources>
+		<CornerRadius x:Key="ButtonCornerRadius">5</CornerRadius>
 		<FontFamily x:Key="AkkoPro">avares://RequestBotLinux/Assets/Fonts/AkkoPro-Regular.ttf#Akko Pro</FontFamily>
 		<FontFamily x:Key="Phosphor">avares://RequestBotLinux/Assets/Fonts/Phosphor.ttf#Phosphor</FontFamily>
 		<FontFamily x:Key="PhosphorBold">avares://RequestBotLinux/Assets/Fonts/Phosphor-Bold.ttf#Phosphor</FontFamily>

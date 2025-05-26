@@ -16,10 +16,9 @@
             <Button Content="Экспорт в Excel" Click="OnExportToExcelClick"/>
         </StackPanel>
 
-        <!-- Упрощенный TreeView без привязок -->
         <TreeView Grid.Row="1" x:Name="treeViewCabinets" 
                  Background="Transparent"
-                 Foreground="White"
+                 Foreground="{DynamicResource TextPrimary}"
                  FontSize="14"
                  DoubleTapped="OnTreeViewDoubleTapped"/>
     </Grid>

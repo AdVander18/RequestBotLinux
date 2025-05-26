@@ -1,54 +1,78 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Data.SQLite;    // Для SQLite
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
-using Telegram.Bot;
-using Telegram.Bot.Types;
-using RequestBotLinux.Views;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums; // Для TimePeriodDialog
-using System.Diagnostics;
-using Avalonia.Input;
+using RequestBotLinux.Views;
+using Telegram.Bot;
+using Telegram.Bot.Types;
 
 
 namespace RequestBotLinux;
 
 public partial class MainFormInstance : UserControl
 {
+    public string CurrentUser => listViewUsers.SelectedItem as string;
+    private readonly ViewModels.MainFormViewModel _viewModel = new();
+
     public MainFormInstance()
     {
         InitializeComponent();
+        DataContext = _viewModel;
         listViewUsers.SelectionChanged += OnUserSelected;
     }
+
+
+    public void UpdateMessages(string messages)
+    {
+        _viewModel.MessagesText = messages;
+        Dispatcher.UIThread.Post(() => scrollViewer.ScrollToEnd());
+    }
+
     private void OnUserSelected(object sender, SelectionChangedEventArgs e)
     {
         if (listViewUsers.SelectedItem is string selectedUser)
         {
+            // Загружаем сообщения синхронно
             var messages = App.Database.GetMessagesByUsername(selectedUser)
                 .OrderBy(t => t.Timestamp)
-                .Select(t => t.IsFromAdmin
-                    ? $"[{t.Timestamp:yyyy-MM-dd HH:mm}] [Вы] {t.MessageText}"
-                    : $"[{t.Timestamp:yyyy-MM-dd HH:mm}] {t.MessageText}");
+                .Select(t => FormatMessage(t));
 
-            UpdateMessages(string.Join(Environment.NewLine, messages));
+            _viewModel.MessagesText = string.Join(Environment.NewLine, messages);
+            scrollViewer.ScrollToEnd();
         }
     }
-    public void UpdateMessages(string messages)
-    {
-        Dispatcher.UIThread.Post(() =>
-        {
-            // Добавляем новые сообщения, а не заменяем всё
-            textBoxMessages.Text = messages;
-            scrollViewer.ScrollToEnd();
-        });
-    }
+    private static string FormatMessage(Models.MessageData msg) =>
+        $"[{msg.Timestamp:yyyy-MM-dd HH:mm}] {(msg.IsFromAdmin ? "[Вы] " : "")}{msg.MessageText}";
+
+
     public void UpdateUsers(IEnumerable<string> users)
     {
-        listViewUsers.ItemsSource = users;
+        var newUsers = new HashSet<string>(users);
+
+        // Удаляем отсутствующих пользователей
+        foreach (var existingUser in _viewModel.Users.ToList())
+        {
+            if (!newUsers.Contains(existingUser))
+                _viewModel.Users.Remove(existingUser);
+        }
+
+        // Добавляем новых пользователей
+        foreach (var user in users)
+        {
+            if (!_viewModel.Users.Contains(user))
+                _viewModel.Users.Add(user);
+        }
     }
     public void AppendMessage(string message)
     {
@@ -62,11 +86,13 @@ public partial class MainFormInstance : UserControl
             return;
         }
 
-        if (listViewUsers.SelectedItem is not string selectedUser)
+        var selectedUser = listViewUsers.SelectedItem as string;
+        if (string.IsNullOrEmpty(selectedUser))
         {
             AppendMessage("[Ошибка] Выберите пользователя!");
             return;
         }
+        RefreshMessages();
 
         try
         {
@@ -205,5 +231,23 @@ public partial class MainFormInstance : UserControl
                 e.Handled = true;
             }
         }
+    }
+    public void RefreshMessages()
+    {
+        if (!Dispatcher.UIThread.CheckAccess())
+        {
+            Dispatcher.UIThread.Post(RefreshMessages);
+            return;
+        }
+
+        var selectedUser = listViewUsers.SelectedItem as string;
+        if (string.IsNullOrEmpty(selectedUser)) return;
+
+        var messages = App.Database.GetMessagesByUsername(selectedUser)
+            .OrderBy(t => t.Timestamp)
+            .Select(FormatMessage);
+
+        _viewModel.MessagesText = string.Join(Environment.NewLine, messages);
+        scrollViewer.ScrollToEnd();
     }
 }

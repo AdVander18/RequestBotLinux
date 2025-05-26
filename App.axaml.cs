@@ -16,6 +16,7 @@ using MsBox.Avalonia.Enums;
 using System.Text.RegularExpressions;
 using MsBox.Avalonia.Dto;
 using System.Text;
+using Avalonia.Styling;
 
 namespace RequestBotLinux
 {
@@ -29,45 +30,99 @@ namespace RequestBotLinux
                 : value;
         }
     }
+
     public partial class App : Application
     {
+
+        public static ThemeVariant CurrentTheme { get; private set; } = ThemeVariant.Light;
+
+        public void SetTheme(ThemeVariant theme)
+        {
+            if (Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                Current.RequestedThemeVariant = theme;
+                foreach (var window in desktop.Windows)
+                {
+                    window.RequestedThemeVariant = theme;
+                }
+            }
+            SettingsManager.SaveTheme(theme); // Сохраняем тему
+
+            var actualTheme = theme == ThemeVariant.Light ? ThemeVariant.Light : theme;
+            var resources = Current.Resources;
+
+            if (actualTheme == ThemeVariant.Dark)
+            {
+                resources["PrimaryForeground"] = resources["DarkPrimaryForeground"];
+                resources["PrimaryBackground"] = resources["DarkPrimaryBackground"];
+                resources["PrimaryHoverBackground"] = resources["DarkPrimaryHoverBackground"];
+                resources["PrimaryBackgroundGradient"] = resources["DarkPrimaryBackgroundGradient"];
+            }
+            else
+            {
+                resources["PrimaryForeground"] = resources["LightPrimaryForeground"];
+                resources["PrimaryBackground"] = resources["LightPrimaryBackground"];
+                resources["PrimaryHoverBackground"] = resources["LightPrimaryHoverBackground"];
+                resources["PrimaryBackgroundGradient"] = resources["LightPrimaryBackgroundGradient"];
+            }
+        }
+
         public static DataBase Database { get; private set; }
         public static TelegramBotClient BotClient => _botClient;
         private static TelegramBotClient _botClient;
-        private string taskHelp = "/help";
+        private string taskHelp = "help";
         private string taskDone = "Заявка принята в работу👍";
 
 
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
+            // Убрали вызов SetTheme здесь
             var dbPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "bot.db");
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "bot.db");
             Database = new DataBase(dbPath);
             Console.WriteLine($"Database path: {Database.DbPath}");
+        }
+        public void ChangeTheme(ThemeVariant newTheme)
+        {
+            Application.Current!.RequestedThemeVariant = newTheme;
+            SettingsManager.SaveTheme(newTheme);
         }
         public static event Action<string> BotStatusChanged;
 
         public override async void OnFrameworkInitializationCompleted()
         {
+            // Загружаем тему перед инициализацией UI
+            var settings = SettingsManager.LoadSettings();
+            var savedTheme = SettingsManager.LoadTheme();
+            SetTheme(savedTheme); // Применяем сохранённую тему
+
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 desktop.MainWindow = new MainWindow();
+                // Убрали явное присвоение темы окну, так как SetTheme уже обновил тему приложения
             }
 
             try
             {
-                _botClient = new TelegramBotClient("7299350943:AAGnUiWRM_pzS_emlIF_EodBotbxac4F5QI");
-                var receiverOptions = new ReceiverOptions();
+                if (!string.IsNullOrEmpty(settings.BotToken))
+                {
+                    _botClient = new TelegramBotClient(settings.BotToken);
+                    var receiverOptions = new ReceiverOptions();
 
-                _botClient.StartReceiving(
-                    updateHandler: async (client, update, ct) => await HandleUpdateAsync(client, update, ct),
-                    errorHandler: async (client, exception, ct) => await HandleErrorAsync(client, exception, ct),
-                    receiverOptions: receiverOptions
-                );
+                    _botClient.StartReceiving(
+                        updateHandler: async (client, update, ct) => await HandleUpdateAsync(client, update, ct),
+                        errorHandler: async (client, exception, ct) => await HandleErrorAsync(client, exception, ct),
+                        receiverOptions: receiverOptions
+                    );
 
-                BotStatusChanged?.Invoke("[Система] Бот успешно запущен!");
+                    BotStatusChanged?.Invoke("[Система] Бот успешно запущен!");
+                }
+                else
+                {
+                    BotStatusChanged?.Invoke("[Ошибка] Токен бота не найден. Введите токен в настройках.");
+                }
             }
             catch (Exception ex)
             {
@@ -97,16 +152,16 @@ namespace RequestBotLinux
                     {
                         await botClient.SendTextMessageAsync(chatId,
                             "Для создания заявки используйте:\n" +
-                            "/help [Фамилия] [Кабинет] [Описание] [Срок]\n" +
+                            "help [Фамилия] [Кабинет] [Описание] [Срок]\n" +
                             "Пример:\n" +
-                            "/help Иванов 404 Не работает принтер 3 дня");
+                            "help Иванов 404 Не работает принтер 3 дня");
                         return; // Важно!
                     }
 
-                    // Обработка /help
+                    // Обработка help
                     if (messageText.ToLower().StartsWith(taskHelp.ToLower()))
                     {
-                        var pattern = @"^/help\s+([^\d]+?)\s+(\d+)\s+(.+?)(?:\s+(\d+)\s+(день|дня|дней|месяц|месяца|месяцев))?$";
+                        var pattern = @"^help\s+([^\d]+?)\s+(\d+)\s+(.+?)(?:\s+(\d+)\s+(день|дня|дней|месяц|месяца|месяцев))?$";
                         var match = Regex.Match(messageText, pattern, RegexOptions.IgnoreCase);
 
                         if (match.Success)
@@ -146,7 +201,7 @@ namespace RequestBotLinux
                         else
                         {
                             await botClient.SendTextMessageAsync(chatId,
-                                "❌ Неверный формат!\nПример:\n/help Иванов 404 Описание проблемы 3 дня");
+                                "❌ Неверный формат!\nПример:\nhelp Иванов 404 Описание проблемы 3 дня");
                             return; // Ключевое исправление: добавляем return!
                         }
                     }
@@ -164,8 +219,21 @@ namespace RequestBotLinux
                         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
                             desktop.MainWindow is MainWindow mainWindow)
                         {
-                            mainWindow.LoadMessages();
                             mainWindow.LoadUsers();
+                            mainWindow.LoadMessages();
+
+                            // Всегда обновляем если открыта форма сообщений
+                            if (mainWindow.MainContent.Content is MainFormInstance mainForm)
+                            {
+                                // Нормализуем username для сравнения
+                                var incomingUser = username.Trim().ToLower();
+                                var currentUser = mainForm.CurrentUser?.Trim().ToLower();
+
+                                if (currentUser == incomingUser)
+                                {
+                                    mainForm.RefreshMessages();
+                                }
+                            }
                         }
                     });
                 }

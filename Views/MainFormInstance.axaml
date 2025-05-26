@@ -2,8 +2,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:local="clr-namespace:RequestBotLinux"
+			 xmlns:vm="using:RequestBotLinux.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
-             x:Class="RequestBotLinux.MainFormInstance">
+             x:Class="RequestBotLinux.MainFormInstance"
+			 x:DataType="vm:MainFormViewModel">
+	<UserControl.Resources>
+		<local:TaskTextColorConverter x:Key="TextColorConverter"/>
+	</UserControl.Resources>
+
 	<Grid ColumnDefinitions="300,*" Margin="10">
 		<Border Grid.Column="0" Background="{DynamicResource PrimaryBackgroundGradient}" CornerRadius="8" Margin="0 0 10 0">
 			<StackPanel>
@@ -12,13 +19,18 @@
                           Margin="10"
                           Foreground="{DynamicResource TextPrimary}"/>
 				<ListBox x:Name="listViewUsers"
-         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+             SelectionMode="Single"
+             ItemsSource="{Binding Users}"
+             Background="Transparent"
+             Foreground="{DynamicResource TextControlForeground}">
 					<ListBox.ItemTemplate>
 						<DataTemplate>
-							<TextBlock Text="{Binding}"
-									   Foreground="{DynamicResource TextPrimary}"
-									   Margin="10 5"
-									   FontSize="14"/>
+							<StackPanel Orientation="Horizontal" Spacing="8">
+								<TextBlock
+									Text="{Binding}"
+									Foreground="{Binding Converter={StaticResource TextColorConverter}}"/>
+							</StackPanel>
 						</DataTemplate>
 					</ListBox.ItemTemplate>
 				</ListBox>
@@ -27,15 +39,15 @@
 		<Grid Grid.Column="1" RowDefinitions="*,Auto">
 			<ScrollViewer x:Name="scrollViewer" Grid.Row="0">
 				<TextBox x:Name="textBoxMessages"
-             IsReadOnly="True"
-             AcceptsReturn="True"
-             TextWrapping="Wrap"
-             FontFamily="Courier New"
-             Foreground="{DynamicResource TextPrimary}"
-             Background="Transparent"
-             BorderThickness="0"
-             Padding="10"
-             Text=""/>
+						 IsReadOnly="True"
+						 AcceptsReturn="True"
+						 TextWrapping="Wrap"
+						 FontFamily="Courier New"
+						 Foreground="{DynamicResource TextPrimary}"
+						 Background="Transparent"
+						 BorderThickness="0"
+						 Padding="10"
+						 Text="{Binding MessagesText, Mode=OneWay}"/>
 			</ScrollViewer>
 			<Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" Margin="0 10 0 0">
 				<TextBox x:Name="tbSendMessage"

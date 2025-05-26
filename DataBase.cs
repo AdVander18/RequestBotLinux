@@ -342,24 +342,21 @@ namespace RequestBotLinux
         {
             try
             {
-                var nowUtc = DateTime.UtcNow;
-                var cutoff = nowUtc - period;
+                var cutoff = DateTime.Now - period;
 
                 using (var conn = new SQLiteConnection(_connectionString))
                 {
                     conn.Open();
-
-                    var deleteCmd = new SQLiteCommand(
-                        @"DELETE FROM Messages 
-            WHERE Username = @username 
-            AND Timestamp < @cutoff",
-                        conn);
-
-                    deleteCmd.Parameters.AddWithValue("@username", username);
-                    deleteCmd.Parameters.AddWithValue("@cutoff", cutoff.ToString("yyyy-MM-dd HH:mm:ss"));
-
-                    return deleteCmd.ExecuteNonQuery();
+                    var cmd = new SQLiteCommand(@"
+            DELETE FROM Messages 
+            WHERE Username = @Username 
+            AND Timestamp < @Cutoff 
+            AND NOT (IsTask = 1 AND Status != 'Completed')", conn);
+                    cmd.Parameters.AddWithValue("@Username", username);
+                    cmd.Parameters.AddWithValue("@Cutoff", cutoff.ToString("yyyy-MM-dd HH:mm:ss"));
+                    return cmd.ExecuteNonQuery();
                 }
+
             }
             catch (Exception ex)
             {
@@ -701,6 +698,23 @@ namespace RequestBotLinux
                 cmd.Parameters.AddWithValue("@id", equipment.Id);
 
                 cmd.ExecuteNonQuery();
+            }
+        }
+        public void DeleteDatabase()
+        {
+            try
+            {
+                SQLiteConnection.ClearAllPools(); // Закрыть все соединения
+                if (File.Exists(DbPath))
+                {
+                    File.Delete(DbPath); // Удалить файл базы
+                }
+                InitializeDatabase(); // Пересоздать структуру
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[DELETE DATABASE ERROR] {ex}");
+                throw;
             }
         }
     }

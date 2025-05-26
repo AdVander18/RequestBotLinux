@@ -116,19 +116,19 @@ public partial class CabinetsWindow : UserControl
         {
             Orientation = Orientation.Horizontal,
             Children =
+        {
+            new TextBlock
             {
-                new TextBlock
-                {
-                    Text = $"Кабинет {cab.Number}",
-                    Foreground = Brushes.White,
-                    FontWeight = FontWeight.Bold
-                },
-                new TextBlock
-                {
-                    Text = $" ({cab.Description})",
-                    Foreground = Brushes.Gray
-                }
+                Text = $"Кабинет {cab.Number}",
+                Foreground = (IBrush)Application.Current.FindResource("TextControlForeground"),
+                FontWeight = FontWeight.Bold
+            },
+            new TextBlock
+            {
+                Text = $" ({cab.Description})",
+                Foreground = (IBrush)Application.Current.FindResource("TextSecondaryBrush")
             }
+        }
         };
     }
 
@@ -228,7 +228,7 @@ public partial class CabinetsWindow : UserControl
             new TextBlock
             {
                 Text = $"{emp.FirstName} {emp.LastName}",
-                Foreground = Brushes.White
+                Foreground = Brushes.DarkGray 
             },
             new TextBlock
             {

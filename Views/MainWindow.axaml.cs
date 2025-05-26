@@ -9,12 +9,27 @@ namespace RequestBotLinux.Views
 {
     public partial class MainWindow : Window
     {
+        public MainFormInstance MainForm { get; set; }
         public MainWindow()
         {
             InitializeComponent();
+            MainForm = mainForm;
             App.BotStatusChanged += OnBotStatusChanged;
-            App.Database.MessageAdded += () => Dispatcher.UIThread.InvokeAsync(LoadMessages);
-            RefreshMessagesFromDb();
+            App.Database.MessageAdded += DatabaseUpdated;
+        }
+
+        private void DatabaseUpdated()
+        {
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                LoadUsers();
+                LoadMessages();
+
+                if (MainContent.Content is MainFormInstance mainForm)
+                {
+                    mainForm.RefreshMessages();
+                }
+            });
         }
 
         public void RefreshMessagesFromDb()
@@ -60,30 +75,27 @@ namespace RequestBotLinux.Views
             LoadUsers();
 
         }
-        private void TestDatabase()
-        {
-            var tasks = App.Database.GetAllTasks();
-            foreach (var task in tasks)
-            {
-                Console.WriteLine($"Task {task.Id}: {task.MessageText}");
-            }
-        }
+
         public void LoadMessages()
         {
-            Dispatcher.UIThread.InvokeAsync(() =>
+            if (MainContent.Content is MainFormInstance mainForm)
             {
-                var messages = App.Database.GetAllTasks();
-                var messagesText = string.Join(
-                    Environment.NewLine,
-                    messages.Select(t => $"[{t.Username}] {t.Timestamp}: {t.MessageText}")
-                );
-
-                if (MainContent.Content is MainFormInstance mainForm)
+                var selectedUser = mainForm.CurrentUser;
+                if (!string.IsNullOrEmpty(selectedUser))
                 {
-                    mainForm.UpdateMessages(messagesText);
+                    var messages = App.Database.GetMessagesByUsername(selectedUser)
+                        .OrderBy(t => t.Timestamp)
+                        .Select(t => FormatMessage(t));
+
+                    mainForm.UpdateMessages(string.Join(Environment.NewLine, messages));
                 }
-            });
+            }
         }
+        private static string FormatMessage(Models.MessageData msg)
+        {
+            return $"[{msg.Timestamp:HH:mm}] {(msg.IsFromAdmin ? "[Вы] " : "")}{msg.MessageText}";
+        }
+
         public void LoadUsers()
         {
             var users = App.Database.GetUniqueUsers();
@@ -122,6 +134,11 @@ namespace RequestBotLinux.Views
         {
             var qrWindow = new QrcodesWindow();
             MainContent.Content = qrWindow;
+        }
+        private void OnSettingsButtonClicked(object sender, RoutedEventArgs e)
+        {
+            var settingsDialog = new SettingsDialog(App.Database);
+            MainContent.Content = settingsDialog;
         }
     }
 }

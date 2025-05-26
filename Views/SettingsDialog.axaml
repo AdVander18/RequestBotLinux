@@ -7,11 +7,21 @@
 	<StackPanel Margin="20" Spacing="15">
 		<StackPanel Spacing="5">
 			<TextBlock Text="Тема"/>
-			<Slider Minimum="0" Maximum="1" TickFrequency="1"
+			<Slider x:Name="ThemeSlider"
+                    Minimum="0" Maximum="1"
+                    TickFrequency="1"
                     IsSnapToTickEnabled="True"
-					ValueChanged="OnThemeChanged"/>
+                    ValueChanged="OnThemeChanged"/>
 		</StackPanel>
 
+		<!-- Новая секция для ввода токена бота -->
+		<StackPanel Spacing="5">
+			<TextBlock Text="Токен бота"/>
+			<TextBox x:Name="BotTokenInput"
+                     Height="30"
+                     Watermark="Введите токен бота..."/>
+		</StackPanel>
+		<Button Content="Сохранить токен" Click="OnSaveDataClicked"/>
 		<Button Content="Удалить все данные" Click="OnDeleteDataClicked"/>
 	</StackPanel>
 </UserControl>
