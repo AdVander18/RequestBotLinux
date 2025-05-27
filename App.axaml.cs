@@ -93,15 +93,14 @@ namespace RequestBotLinux
 
         public override async void OnFrameworkInitializationCompleted()
         {
-            // Загружаем тему перед инициализацией UI
+            // Загружаем настройки
             var settings = SettingsManager.LoadSettings();
-            var savedTheme = SettingsManager.LoadTheme();
-            SetTheme(savedTheme); // Применяем сохранённую тему
+            // Применяем сохранённую тему
+            SetTheme(settings.Theme);
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
                 desktop.MainWindow = new MainWindow();
-                // Убрали явное присвоение темы окну, так как SetTheme уже обновил тему приложения
             }
 
             try
@@ -181,18 +180,18 @@ namespace RequestBotLinux
                             }
 
                             await Database.AddTaskMessageAsync(
-        new RequestBotLinux.Models.User
-        {
-            Username = user.Username,
-            FirstName = user.FirstName,
-            LastName = ""
-        },
-        chatId,
-        lastName,
-        cabinetNumber,
-        description,
-        deadline
-    );
+                                new RequestBotLinux.Models.User
+                                {
+                                    Username = user.Username,
+                                    FirstName = user.FirstName,    // Берем имя из Telegram
+                                    LastName = user.LastName      // Берем фамилию из Telegram
+                                },
+                                chatId,
+                                lastName,
+                                cabinetNumber,
+                                description,
+                                deadline
+                            );
 
 
                             await botClient.SendTextMessageAsync(chatId, taskDone);

@@ -10,15 +10,19 @@ using MsBox.Avalonia.Enums;
 
 namespace RequestBotLinux;
 
-public partial class SettingsDialog : UserControl
+public partial class SettingsDialog : Window
 {
-    private readonly SettingsData _currentSettings;
-    private readonly DataBase _database;
+    private SettingsData _currentSettings;
+    private DataBase _database;
 
 
-    public SettingsDialog(DataBase database)
+    public SettingsDialog()
     {
         InitializeComponent();
+    }
+
+    public void Initialize(DataBase database)
+    {
         _database = database;
         _currentSettings = SettingsManager.LoadSettings();
 
@@ -26,13 +30,15 @@ public partial class SettingsDialog : UserControl
         ThemeSlider.Value = Application.Current?.RequestedThemeVariant == ThemeVariant.Dark ? 1 : 0;
         ThemeSlider.ValueChanged += OnThemeChanged;
 
-        // Загружаем сохраненный токен
         BotTokenInput.Text = _currentSettings.BotToken;
     }
 
 
+
     private void OnThemeChanged(object sender, RangeBaseValueChangedEventArgs e)
     {
+        if (Application.Current == null) return;
+
         var theme = Application.Current.RequestedThemeVariant == ThemeVariant.Dark
             ? ThemeVariant.Light
             : ThemeVariant.Dark;
@@ -53,8 +59,8 @@ public partial class SettingsDialog : UserControl
                 "Ошибка",
                 "Токен не может быть пустым",
                 ButtonEnum.Ok,
-                Icon.Error);
-            await errorBox.ShowWindowDialogAsync(TopLevel.GetTopLevel(this) as Window);
+                MsBox.Avalonia.Enums.Icon.Error);
+            await errorBox.ShowWindowDialogAsync(this);
             return;
         }
 
@@ -63,8 +69,8 @@ public partial class SettingsDialog : UserControl
             "Успех",
             "Настройки сохранены",
             ButtonEnum.Ok,
-            Icon.Success);
-        await successBox.ShowWindowDialogAsync(TopLevel.GetTopLevel(this) as Window);
+            MsBox.Avalonia.Enums.Icon.Success);
+        await successBox.ShowWindowDialogAsync(this);
     }
 
     private async void OnDeleteDataClicked(object sender, RoutedEventArgs e)
@@ -75,10 +81,10 @@ public partial class SettingsDialog : UserControl
                 ButtonDefinitions = ButtonEnum.YesNo,
                 ContentTitle = "Подтверждение удаления",
                 ContentMessage = "Вы уверены, что хотите удалить все данные?",
-                Icon = Icon.Question,
+                Icon = MsBox.Avalonia.Enums.Icon.Question,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
             });
-        var result = await messageBox.ShowWindowDialogAsync(TopLevel.GetTopLevel(this) as Window);
+        var result = await messageBox.ShowWindowDialogAsync(this);
 
         if (result == ButtonResult.Yes)
         {
@@ -89,8 +95,8 @@ public partial class SettingsDialog : UserControl
                     "Успех",
                     "Все данные успешно удалены.",
                     ButtonEnum.Ok,
-                    Icon.Success);
-                await successBox.ShowWindowDialogAsync(TopLevel.GetTopLevel(this) as Window);
+                    MsBox.Avalonia.Enums.Icon.Success);
+                await successBox.ShowWindowDialogAsync(this);
             }
             catch (Exception ex)
             {
@@ -98,8 +104,8 @@ public partial class SettingsDialog : UserControl
                     "Ошибка",
                     $"Ошибка при удалении данных: {ex.Message}",
                     ButtonEnum.Ok,
-                    Icon.Error);
-                await errorBox.ShowWindowDialogAsync(TopLevel.GetTopLevel(this) as Window);
+                    MsBox.Avalonia.Enums.Icon.Error);
+                await errorBox.ShowWindowDialogAsync(this);
             }
         }
     }

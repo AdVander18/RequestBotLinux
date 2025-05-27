@@ -1,9 +1,12 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="RequestBotLinux.SettingsDialog">
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        x:Class="RequestBotLinux.SettingsDialog"
+        Title="Настройки"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner">
 	<StackPanel Margin="20" Spacing="15">
 		<StackPanel Spacing="5">
 			<TextBlock Text="Тема"/>
@@ -24,4 +27,4 @@
 		<Button Content="Сохранить токен" Click="OnSaveDataClicked"/>
 		<Button Content="Удалить все данные" Click="OnDeleteDataClicked"/>
 	</StackPanel>
-</UserControl>
+</Window>

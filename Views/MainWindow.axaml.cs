@@ -135,10 +135,12 @@ namespace RequestBotLinux.Views
             var qrWindow = new QrcodesWindow();
             MainContent.Content = qrWindow;
         }
-        private void OnSettingsButtonClicked(object sender, RoutedEventArgs e)
+        private async void OnSettingsButtonClicked(object sender, RoutedEventArgs e)
         {
-            var settingsDialog = new SettingsDialog(App.Database);
-            MainContent.Content = settingsDialog;
+            var dialog = new SettingsDialog();
+            dialog.Initialize(App.Database);
+            await dialog.ShowDialog(this); // Исправлено
         }
+
     }
 }

@@ -87,32 +87,6 @@ public partial class TasksWindow : UserControl
         foreach (var task in tasks) Tasks.Add(task);
     }
 
-
-
-
-    // Определение цвета индикатора
-    private IBrush GetIndicatorBrush(TaskData task)
-    {
-        // Приоритет статуса "Завершено"
-        if (task.Status == "Завершено")
-            return Brushes.Green;
-
-        // Проверка просрочки
-        var totalDuration = task.Deadline - task.Timestamp;
-        var remainingTime = task.Deadline - DateTime.Now;
-
-        if (remainingTime.TotalSeconds < 0 ||
-            (totalDuration.TotalSeconds > 0 &&
-             remainingTime.TotalSeconds / totalDuration.TotalSeconds < 0.1))
-        {
-            return Brushes.Red;
-        }
-
-        return Brushes.Transparent;
-    }
-
-
-
     private void OnTaskDoubleTapped(object sender, RoutedEventArgs e)
     {
         if (listViewTasks.SelectedItem is TaskData selectedTask)
@@ -121,20 +95,6 @@ public partial class TasksWindow : UserControl
             App.Database.UpdateTaskStatus(selectedTask.Id, newStatus);
             LoadTasks();
         }
-    }
-
-
-    // Цвет текста для срочных задач
-    private IBrush GetTextColor(TaskData task)
-    {
-        var totalDuration = task.Deadline - task.Timestamp;
-        var remainingTime = task.Deadline - DateTime.Now;
-
-        if (remainingTime.TotalSeconds < 0 ||
-            (remainingTime.TotalSeconds / totalDuration.TotalSeconds) < 0.1)
-            return Brushes.Red;
-
-        return Brushes.White;
     }
 
     private void OnTaskSelected(object sender, SelectionChangedEventArgs e)

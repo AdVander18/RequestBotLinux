@@ -13,7 +13,6 @@ namespace RequestBotLinux
     public static class SettingsManager
     {
         private const string ThemeKey = "SelectedTheme";
-        private const string BOT_TOKEN_KEY = "BotToken";
         private static readonly string SettingsPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "RequestBot",
@@ -65,32 +64,27 @@ namespace RequestBotLinux
                 Console.WriteLine($"Error saving theme: {ex.Message}");
             }
         }
-        public static void SaveSettings(SettingsData data)
-        {
-            var directory = Path.GetDirectoryName(SettingsPath);
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            var json = JsonSerializer.Serialize(data);
-            File.WriteAllText(SettingsPath, json);
-        }
-
         public static SettingsData LoadSettings()
         {
             if (!File.Exists(SettingsPath))
-            {
                 return new SettingsData();
-            }
 
             var json = File.ReadAllText(SettingsPath);
             return JsonSerializer.Deserialize<SettingsData>(json) ?? new SettingsData();
         }
+
+        public static void SaveSettings(SettingsData data)
+        {
+            var directory = Path.GetDirectoryName(SettingsPath);
+            Directory.CreateDirectory(directory ?? throw new InvalidOperationException());
+            var json = JsonSerializer.Serialize(data);
+            File.WriteAllText(SettingsPath, json);
+        }
+
     }
     public class SettingsData
     {
-        public ThemeVariant Theme { get; set; } = ThemeVariant.Light;
+        public ThemeVariant Theme { get; set; } = ThemeVariant.Dark; // ИЗМЕНИТЬ ТЕМУ А ТО ОНО ПО ДЕФОЛТУ ДРУГОЕ НУУУ
         public string BotToken { get; set; } = string.Empty;
     }
 }

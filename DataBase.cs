@@ -97,6 +97,7 @@ namespace RequestBotLinux
                 WHERE IsFromAdmin IS NULL",
                     connection);
                     migrateCmd.ExecuteNonQuery();
+                    AddColumnIfNotExists(connection, "Messages", "FirstName", "TEXT");
                     AddColumnIfNotExists(connection, "Messages", "Deadline", "DATETIME DEFAULT (datetime('now','+1 month'))");
                 }
             }
@@ -114,11 +115,13 @@ namespace RequestBotLinux
 
                 var command = new SQLiteCommand(
                     @"INSERT INTO Messages 
-            (Username, ChatId, MessageText, IsTask, Status, LastName, CabinetNumber, Deadline, Timestamp) 
-            VALUES (@username, @chatId, @messageText, 1, 'В работе', @lastName, @cabinet, @deadline, @timestamp)",
+                (Username, FirstName, ChatId, MessageText, IsTask, Status, LastName, CabinetNumber, Deadline, Timestamp) 
+            VALUES 
+                (@username, @firstName, @chatId, @messageText, 1, 'В работе', @lastName, @cabinet, @deadline, @timestamp)",
                     connection);
 
                 command.Parameters.AddWithValue("@username", user.Username ?? "");
+                command.Parameters.AddWithValue("@firstName", user.FirstName ?? "N/A"); // Добавлено
                 command.Parameters.AddWithValue("@chatId", chatId);
                 command.Parameters.AddWithValue("@messageText", description);
                 command.Parameters.AddWithValue("@lastName", lastName);
@@ -137,18 +140,19 @@ namespace RequestBotLinux
             {
                 connection.Open();
                 var command = new SQLiteCommand(
-                    @"SELECT M.Id,
-        M.Username,
-        M.MessageText,
-        M.Status, 
-        M.LastName,
-        M.CabinetNumber,
-        U.FirstName,
-        M.Timestamp,
-        M.Deadline
-  FROM Messages M
-  LEFT JOIN Users U ON M.Username = U.Username
-  WHERE M.IsTask = 1", connection);
+                    @"SELECT 
+                M.Id,
+                M.Username,
+                M.FirstName,
+                M.MessageText,
+                M.Status, 
+                M.LastName,
+                M.CabinetNumber,
+                M.Timestamp,
+                M.Deadline
+            FROM Messages M
+            WHERE M.IsTask = 1", connection); // Убрали JOIN с Users
+
                 using (var reader = command.ExecuteReader())
                 {
                     while (reader.Read())
@@ -157,15 +161,15 @@ namespace RequestBotLinux
                         {
                             Id = Convert.ToInt32(reader["Id"]),
                             Username = reader["Username"].ToString(),
-                            MessageText = reader["MessageText"].ToString(),
-                            Status = reader["Status"].ToString(),
-                            FirstName = reader["FirstName"].ToString(),
+                            FirstName = reader["FirstName"].ToString(), // Берем из Messages
                             LastName = reader["LastName"].ToString(),
                             CabinetNumber = reader["CabinetNumber"].ToString(),
+                            MessageText = reader["MessageText"].ToString(),
+                            Status = reader["Status"].ToString(),
                             Timestamp = DateTime.Parse(reader["Timestamp"].ToString()).ToLocalTime(),
                             Deadline = reader["Deadline"] is DBNull
-        ? DateTime.Parse(reader["Timestamp"].ToString()).AddMonths(1)
-        : DateTime.Parse(reader["Deadline"].ToString())
+                                ? DateTime.Parse(reader["Timestamp"].ToString()).AddMonths(1)
+                                : DateTime.Parse(reader["Deadline"].ToString())
                         });
                     }
                 }
