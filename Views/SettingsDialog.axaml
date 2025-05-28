@@ -10,14 +10,13 @@
 	<StackPanel Margin="20" Spacing="15">
 		<StackPanel Spacing="5">
 			<TextBlock Text="Тема"/>
-			<Slider x:Name="ThemeSlider"
-                    Minimum="0" Maximum="1"
-                    TickFrequency="1"
-                    IsSnapToTickEnabled="True"
-                    ValueChanged="OnThemeChanged"/>
+			<ToggleSwitch x:Name="ThemeSlider"
+						  OffContent="🌞 Светлая"
+						  OnContent="🌙 Тёмная"
+						  IsCheckedChanged="OnThemeChanged"/>
 		</StackPanel>
+		
 
-		<!-- Новая секция для ввода токена бота -->
 		<StackPanel Spacing="5">
 			<TextBlock Text="Токен бота"/>
 			<TextBox x:Name="BotTokenInput"

@@ -46,7 +46,6 @@ namespace RequestBotLinux
                     window.RequestedThemeVariant = theme;
                 }
             }
-            SettingsManager.SaveTheme(theme); // Сохраняем тему
 
             var actualTheme = theme == ThemeVariant.Light ? ThemeVariant.Light : theme;
             var resources = Current.Resources;
@@ -84,18 +83,13 @@ namespace RequestBotLinux
             Database = new DataBase(dbPath);
             Console.WriteLine($"Database path: {Database.DbPath}");
         }
-        public void ChangeTheme(ThemeVariant newTheme)
-        {
-            Application.Current!.RequestedThemeVariant = newTheme;
-            SettingsManager.SaveTheme(newTheme);
-        }
+        
         public static event Action<string> BotStatusChanged;
 
         public override async void OnFrameworkInitializationCompleted()
         {
-            // Загружаем настройки
+            // Загружаем все настройки, включая тему
             var settings = SettingsManager.LoadSettings();
-            // Применяем сохранённую тему
             SetTheme(settings.Theme);
 
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

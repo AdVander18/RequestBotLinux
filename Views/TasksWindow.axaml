@@ -14,6 +14,7 @@
 	</UserControl.Resources>
 	
 	<Grid ColumnDefinitions="300,5,*" RowDefinitions="*,Auto" Margin="10">
+		
 		<!-- Левая часть: список задач -->
 		<Border Grid.Column="0" Background="{DynamicResource PrimaryBackgroundGradient}" CornerRadius="8">
 			<StackPanel>
@@ -21,6 +22,18 @@
                            FontSize="16"
                            Margin="10"
                            Foreground="{DynamicResource TextPrimary}"/>
+				<ComboBox x:Name="SortingFilterComboBox"
+          DockPanel.Dock="Top"
+          SelectedIndex="{Binding SortIndex, Mode=TwoWay}"
+          Margin="0">
+					<ComboBoxItem>По возрастанию</ComboBoxItem>
+					<ComboBoxItem>По убыванию</ComboBoxItem>
+				</ComboBox>
+				<TextBox x:Name="FilterTextBox"
+         Text="{Binding FilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+						 Watermark="Введите для поиска...">
+					
+					</TextBox>
 				<ListBox x:Name="listViewTasks"
          ItemsSource="{Binding Tasks}"
          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -44,7 +57,9 @@
 						</DataTemplate>
 					</ListBox.ItemTemplate>
 				</ListBox>
+				
 			</StackPanel>
+			
 		</Border>
 
 		<!-- Разделитель для изменения ширины -->

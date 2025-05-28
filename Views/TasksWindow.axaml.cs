@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
@@ -10,6 +13,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using DocumentFormat.OpenXml.Office2021.DocumentTasks;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using RequestBotLinux.Models;
@@ -18,6 +22,9 @@ namespace RequestBotLinux;
 
 public class TaskStatusToBrushConverter : IValueConverter
 {
+    
+    
+
     public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
     {
         if (value is not TaskData task) return Brushes.Transparent;
@@ -57,9 +64,46 @@ public class TaskTextColorConverter : IValueConverter
         => throw new NotImplementedException();
 }
 
-public partial class TasksWindow : UserControl
+public partial class TasksWindow : UserControl, INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+    private string _filterText = string.Empty;
+    public string FilterText
+    {
+        get => _filterText;
+        set
+        {
+            if (_filterText != value)
+            {
+                _filterText = value;
+                OnPropertyChanged();
+                ApplyFilterAndSorting();
+            }
+        }
+    }
+
+    private int _sortIndex = 0;
+    public int SortIndex
+    {
+        get => _sortIndex;
+        set
+        {
+            if (_sortIndex != value)
+            {
+                _sortIndex = value;
+                OnPropertyChanged();
+                ApplyFilterAndSorting();
+            }
+        }
+    }
     public ObservableCollection<TaskData> Tasks { get; } = new();
+    private List<TaskData> _allTasks = new List<TaskData>();
+
     public TasksWindow()
     {
         InitializeComponent();
@@ -74,17 +118,40 @@ public partial class TasksWindow : UserControl
 
     private void LoadTasks()
     {
-        Tasks.Clear();
-        var tasks = App.Database.GetAllTasks();
+        _allTasks = App.Database.GetAllTasks();
+        ApplyFilterAndSorting();
+    }
 
-        // Временная проверка
-        Debug.WriteLine($"Loaded tasks count: {tasks.Count}");
-        foreach (var task in tasks)
+    private void ApplyFilterAndSorting()
+    {
+        var filtered = _allTasks.AsEnumerable();
+
+        // Применение фильтрации
+        if (!string.IsNullOrWhiteSpace(_filterText))
         {
-            Debug.WriteLine($"Task: {task.MessageText}");
+            var filter = _filterText.ToLower();
+            filtered = filtered.Where(t =>
+                t.MessageText.ToLower().Contains(filter) ||
+                t.Username.ToLower().Contains(filter) ||
+                t.FirstName.ToLower().Contains(filter) ||
+                t.LastName.ToLower().Contains(filter) ||
+                t.CabinetNumber.ToLower().Contains(filter)
+            );
         }
 
-        foreach (var task in tasks) Tasks.Add(task);
+        // Применение сортировки
+        filtered = _sortIndex switch
+        {
+            0 => filtered.OrderBy(t => t.Deadline),
+            1 => filtered.OrderByDescending(t => t.Deadline),
+            _ => filtered
+        };
+
+        Tasks.Clear();
+        foreach (var task in filtered)
+        {
+            Tasks.Add(task);
+        }
     }
 
     private void OnTaskDoubleTapped(object sender, RoutedEventArgs e)

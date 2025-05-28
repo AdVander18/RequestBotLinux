@@ -26,27 +26,36 @@ public partial class SettingsDialog : Window
         _database = database;
         _currentSettings = SettingsManager.LoadSettings();
 
-        ThemeSlider.ValueChanged -= OnThemeChanged;
-        ThemeSlider.Value = Application.Current?.RequestedThemeVariant == ThemeVariant.Dark ? 1 : 0;
-        ThemeSlider.ValueChanged += OnThemeChanged;
+        // Убираем подписку/подписку на событие
+        ThemeSlider.IsCheckedChanged -= OnThemeChanged;
+
+        // Устанавливаем состояние ToggleSwitch
+        ThemeSlider.IsChecked = _currentSettings.Theme == ThemeVariant.Dark;
+
+        // Возвращаем подписку
+        ThemeSlider.IsCheckedChanged += OnThemeChanged;
 
         BotTokenInput.Text = _currentSettings.BotToken;
     }
 
 
 
-    private void OnThemeChanged(object sender, RangeBaseValueChangedEventArgs e)
+    private void OnThemeChanged(object sender, RoutedEventArgs e)
     {
         if (Application.Current == null) return;
 
-        var theme = Application.Current.RequestedThemeVariant == ThemeVariant.Dark
-            ? ThemeVariant.Light
-            : ThemeVariant.Dark;
+        // Получаем текущее состояние ToggleSwitch
+        bool isDarkTheme = ThemeSlider.IsChecked ?? false;
+        var newTheme = isDarkTheme ? ThemeVariant.Dark : ThemeVariant.Light;
+        _currentSettings.Theme = newTheme;
+
+        // Применяем и сохраняем тему
+        Application.Current.RequestedThemeVariant = newTheme;
+        SettingsManager.SaveSettings(_currentSettings);
 
         if (Application.Current is App app)
         {
-            app.RequestedThemeVariant = theme;
-            app.SetTheme(theme);
+            app.SetTheme(newTheme);
         }
     }
     private async void OnSaveDataClicked(object sender, RoutedEventArgs e)
