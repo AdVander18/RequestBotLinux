@@ -2,24 +2,29 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="450"
              x:Class="RequestBotLinux.CabinetsWindow">
 	<Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-
+		
         <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10">
             <Button Content="Добавить кабинет" Click="OnAddCabinetClick"/>
             <Button Content="Редактировать" Click="OnEditCabinetClick"/>
             <Button Content="Экспорт в Excel" Click="OnExportToExcelClick"/>
+			<TextBox x:Name="FilterTextBox"
+				Watermark="Введите для поиска по кабинетам...">
+			</TextBox>
+			<Button Content="X" Margin="5 0 5 0" Click="ClearFilterClick" Width="30"/>
         </StackPanel>
 
         <TreeView Grid.Row="1" x:Name="treeViewCabinets" 
                  Background="Transparent"
                  Foreground="{DynamicResource TextPrimary}"
                  FontSize="14"
+				 Focusable="True"
                  DoubleTapped="OnTreeViewDoubleTapped"/>
     </Grid>
 </UserControl>

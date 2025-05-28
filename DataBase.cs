@@ -721,5 +721,50 @@ namespace RequestBotLinux
                 throw;
             }
         }
+        public void DeleteEmployee(int employeeId)
+        {
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // Удаляем связанные записи из Equipment (если оборудование привязано к сотруднику)
+                        var deleteEquipmentCmd = connection.CreateCommand();
+                        deleteEquipmentCmd.CommandText = "DELETE FROM Equipment WHERE EmployeeId = @employeeId";
+                        deleteEquipmentCmd.Parameters.AddWithValue("@employeeId", employeeId);
+                        deleteEquipmentCmd.ExecuteNonQuery();
+
+                        // Удаляем самого сотрудника
+                        var deleteEmployeeCmd = connection.CreateCommand();
+                        deleteEmployeeCmd.CommandText = "DELETE FROM Employees WHERE Id = @id";
+                        deleteEmployeeCmd.Parameters.AddWithValue("@id", employeeId);
+                        deleteEmployeeCmd.ExecuteNonQuery();
+
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        public void DeleteEquipment(int equipmentId)
+        {
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = "DELETE FROM Equipment WHERE Id = @id";
+                    command.Parameters.AddWithValue("@id", equipmentId);
+                    command.ExecuteNonQuery();
+                }
+            }
+        }
     }
 }

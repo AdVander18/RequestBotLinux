@@ -1,36 +1,117 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
-using MsBox.Avalonia.Models;
-using MsBox.Avalonia;
-using System.Collections.Generic;
-using RequestBotLinux.Models;
-using MsBox.Avalonia.Dto;
-using Avalonia.Layout;
-using System.Threading.Tasks;
-using Telegram.Bot.Types;
 using Avalonia.Data;
-using Avalonia.Media;
 using Avalonia.Data.Converters;
-using System.Globalization;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 using ClosedXML.Excel;
-using System.IO;
-using System;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Dto;
+using MsBox.Avalonia.Enums;
+using MsBox.Avalonia.Models;
+using RequestBotLinux.Models;
+using Telegram.Bot.Types;
 
 namespace RequestBotLinux;
 
 public partial class CabinetsWindow : UserControl
 {
+    private string _currentFilter = string.Empty;
+
     public CabinetsWindow()
     {
         InitializeComponent();
         LoadCabinets();
+        FilterTextBox.TextChanged += FilterTextBox_TextChanged;
+
+        treeViewCabinets.KeyDown += TreeViewCabinets_KeyDown;
     }
+    private async void TreeViewCabinets_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Delete)
+        {
+            if (treeViewCabinets.SelectedItem is TreeViewItem selectedItem
+                && selectedItem.Tag is NodeInfo nodeInfo)
+            {
+                await DeleteNode(nodeInfo);
+            }
+        }
+    }
+    private async Task DeleteNode(NodeInfo nodeInfo)
+    {
+        string message = "";
+        string title = "";
+
+        switch (nodeInfo.Type)
+        {
+            case NodeType.Employee:
+                title = "Удаление сотрудника";
+                message = "Вы точно хотите удалить сотрудника?";
+                break;
+
+            case NodeType.EquipmentItem:
+                title = "Удаление оборудования";
+                message = "Вы точно хотите удалить оборудование?";
+                break;
+
+            default:
+                return; // Неподдерживаемый тип
+        }
+
+        var confirmBox = MessageBoxManager.GetMessageBoxStandard(
+            new MessageBoxStandardParams
+            {
+                ButtonDefinitions = ButtonEnum.YesNo,
+                ContentTitle = title,
+                ContentMessage = message,
+                Icon = Icon.Question,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            });
+
+        var result = await confirmBox.ShowWindowDialogAsync((Window)VisualRoot);
+
+        if (result == ButtonResult.Yes)
+        {
+            switch (nodeInfo.Type)
+            {
+                case NodeType.Employee:
+                    App.Database.DeleteEmployee(nodeInfo.Id);
+                    break;
+
+                case NodeType.EquipmentItem:
+                    App.Database.DeleteEquipment(nodeInfo.Id);
+                    break;
+            }
+
+            LoadCabinets(); // Обновляем список
+        }
+    }
+    private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        _currentFilter = FilterTextBox.Text?.Trim() ?? string.Empty;
+        LoadCabinets();
+    }
+
+    private void ClearFilterClick(object sender, RoutedEventArgs e)
+    {
+        FilterTextBox.Text = string.Empty;
+    }
+
+
     private void LoadCabinets()
     {
         treeViewCabinets.Items.Clear();
         var cabinets = App.Database.GetAllCabinets();
+        bool hasFilter = !string.IsNullOrWhiteSpace(_currentFilter);
 
         if (cabinets.Count == 0)
         {
@@ -47,14 +128,41 @@ public partial class CabinetsWindow : UserControl
 
         foreach (var cab in cabinets)
         {
-            // Убрано дублирование создания cabinetNode
-            var cabinetNode = CreateCabinetNode(cab);
-            treeViewCabinets.Items.Add(cabinetNode);
+            // Проверка соответствия кабинета фильтру
+            bool cabMatches = !hasFilter ||
+                ContainsIgnoreCase(cab.Number, _currentFilter) ||
+                ContainsIgnoreCase(cab.Description, _currentFilter);
+
+            // Фильтрация сотрудников
+            var employees = App.Database.GetEmployeesForCabinet(cab.Id)
+                .Where(e => !hasFilter ||
+                    ContainsIgnoreCase(e.FirstName, _currentFilter) ||
+                    ContainsIgnoreCase(e.LastName, _currentFilter) ||
+                    ContainsIgnoreCase(e.Position, _currentFilter))
+                .ToList();
+
+            // Фильтрация оборудования
+            var equipment = App.Database.GetEquipmentForCabinet(cab.Id)
+                .Where(eq => !hasFilter ||
+                    ContainsIgnoreCase(eq.Model, _currentFilter) ||
+                    ContainsIgnoreCase(eq.OS, _currentFilter))
+                .ToList();
+
+            // Показывать кабинет если он или его содержимое совпадает с фильтром
+            if (!hasFilter || cabMatches || employees.Count > 0 || equipment.Count > 0)
+            {
+                var cabinetNode = CreateCabinetNode(cab, employees, equipment, hasFilter);
+                treeViewCabinets.Items.Add(cabinetNode);
+            }
         }
     }
 
 
-    private TreeViewItem CreateCabinetNode(Cabinet cab)
+    private TreeViewItem CreateCabinetNode(
+        Cabinet cab,
+        List<Employees> employees,
+        List<Equipment> equipment,
+        bool isFiltered)
     {
         var cabinetNode = new TreeViewItem
         {
@@ -62,54 +170,97 @@ public partial class CabinetsWindow : UserControl
             Header = CreateCabinetHeader(cab)
         };
 
-        // Создание узла "Сотрудники"
-        var employeesNode = new TreeViewItem
+        // Создание узла "Сотрудники" только если есть данные или нет фильтра
+        if (!isFiltered || employees.Count > 0)
         {
-            Header = new TextBlock { Text = "Сотрудники", Foreground = Brushes.LightSkyBlue },
-            Tag = new NodeInfo { Type = NodeType.Employees, ParentId = cab.Id }
-        };
-        employeesNode.Items.Add(new TreeViewItem()); // Фиктивный элемент для стрелки
-        employeesNode.Expanded += OnEmployeesOrEquipmentExpanded;
+            var employeesNode = new TreeViewItem
+            {
+                Header = new TextBlock { Text = "Сотрудники", Foreground = Brushes.LightSkyBlue },
+                Tag = new NodeInfo { Type = NodeType.Employees, ParentId = cab.Id }
+            };
 
-        // Контекстное меню для добавления сотрудника
-        var addEmployeeMenuItem = new MenuItem { Header = "Добавить Сотрудника" };
-        addEmployeeMenuItem.Click += async (sender, e) =>
-        {
-            await ShowAddEmployeeDialog(cab.Id);
-            RefreshEmployeesNode(cab.Id);
-        };
-        employeesNode.ContextMenu = new ContextMenu
-        {
-            Items = { addEmployeeMenuItem }
-        };
+            if (isFiltered)
+            {
+                // При фильтрации сразу загружаем данные
+                foreach (var emp in employees)
+                {
+                    employeesNode.Items.Add(new TreeViewItem
+                    {
+                        Header = CreateEmployeeHeader(emp),
+                        Tag = new NodeInfo { Type = NodeType.Employee, Id = emp.Id, ParentId = cab.Id }
+                    });
+                }
+            }
+            else
+            {
+                employeesNode.Items.Add(new TreeViewItem()); // Фиктивный элемент для стрелки
+                employeesNode.Expanded += OnEmployeesOrEquipmentExpanded;
+            }
 
-        // Создание узла "Оборудование"
-        var equipmentNode = new TreeViewItem
-        {
-            Header = new TextBlock { Text = "Оборудование", Foreground = Brushes.LightGreen },
-            Tag = new NodeInfo { Type = NodeType.Equipment, ParentId = cab.Id }
-        };
-        equipmentNode.Items.Add(new TreeViewItem()); // Фиктивный элемент для стрелки
-        equipmentNode.Expanded += OnEmployeesOrEquipmentExpanded;
+            // Контекстное меню для добавления сотрудника
+            var addEmployeeMenuItem = new MenuItem { Header = "Добавить Сотрудника" };
+            addEmployeeMenuItem.Click += async (sender, e) =>
+            {
+                await ShowAddEmployeeDialog(cab.Id);
+                LoadCabinets(); // Обновляем весь список с фильтрацией
+            };
+            employeesNode.ContextMenu = new ContextMenu
+            {
+                Items = { addEmployeeMenuItem }
+            };
 
-        // Контекстное меню для добавления оборудования
-        var addEquipmentMenuItem = new MenuItem { Header = "Добавить Оборудование" };
-        addEquipmentMenuItem.Click += async (sender, e) =>
-        {
-            await ShowAddEquipmentDialog(cab.Id);
-            RefreshEquipmentNode(cab.Id);
-        };
-        equipmentNode.ContextMenu = new ContextMenu
-        {
-            Items = { addEquipmentMenuItem }
-        };
+            cabinetNode.Items.Add(employeesNode);
+        }
 
-        cabinetNode.Items.Add(employeesNode);
-        cabinetNode.Items.Add(equipmentNode);
+        // Создание узла "Оборудование" только если есть данные или нет фильтра
+        if (!isFiltered || equipment.Count > 0)
+        {
+            var equipmentNode = new TreeViewItem
+            {
+                Header = new TextBlock { Text = "Оборудование", Foreground = Brushes.LightGreen },
+                Tag = new NodeInfo { Type = NodeType.Equipment, ParentId = cab.Id }
+            };
+
+            if (isFiltered)
+            {
+                // При фильтрации сразу загружаем данные
+                foreach (var eq in equipment)
+                {
+                    equipmentNode.Items.Add(new TreeViewItem
+                    {
+                        Header = CreateEquipmentHeader(eq),
+                        Tag = new NodeInfo { Type = NodeType.EquipmentItem, Id = eq.Id, ParentId = cab.Id }
+                    });
+                }
+            }
+            else
+            {
+                equipmentNode.Items.Add(new TreeViewItem()); // Фиктивный элемент для стрелки
+                equipmentNode.Expanded += OnEmployeesOrEquipmentExpanded;
+            }
+
+            // Контекстное меню для добавления оборудования
+            var addEquipmentMenuItem = new MenuItem { Header = "Добавить Оборудование" };
+            addEquipmentMenuItem.Click += async (sender, e) =>
+            {
+                await ShowAddEquipmentDialog(cab.Id);
+                LoadCabinets(); // Обновляем весь список с фильтрацией
+            };
+            equipmentNode.ContextMenu = new ContextMenu
+            {
+                Items = { addEquipmentMenuItem }
+            };
+
+            cabinetNode.Items.Add(equipmentNode);
+        }
 
         return cabinetNode;
     }
 
+    private static bool ContainsIgnoreCase(string source, string value)
+    {
+        return source?.Contains(value, StringComparison.OrdinalIgnoreCase) ?? false;
+    }
     private StackPanel CreateCabinetHeader(Cabinet cab)
     {
         return new StackPanel
@@ -249,7 +400,7 @@ public partial class CabinetsWindow : UserControl
             new TextBlock
             {
                 Text = $"{eq.Type}: {eq.Model}",
-                Foreground = Brushes.White
+                Foreground = Brushes.DarkGray
             }
         }
         };
@@ -259,7 +410,7 @@ public partial class CabinetsWindow : UserControl
             stack.Children.Add(new TextBlock
             {
                 Text = $" ({eq.OS})",
-                Foreground = Brushes.LightGray
+                Foreground = Brushes.Gray
             });
         }
 
@@ -329,45 +480,10 @@ public partial class CabinetsWindow : UserControl
                 Position = tbPosition.Text,
                 CabinetId = cabinetId
             });
+            LoadCabinets();
         }
     }
-    private async Task ShowEditEmployeeDialog(int employeeId, int cabinetId)
-    {
-        var employee = App.Database.GetEmployeeById(employeeId);
-        if (employee == null) return;
 
-        var dialog = new Window
-        {
-            Title = "Редактировать сотрудника",
-            SizeToContent = SizeToContent.WidthAndHeight,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner
-        };
-
-        var panel = new StackPanel { Spacing = 10 };
-        var tbFirstName = new TextBox { Text = employee.FirstName };
-        var tbLastName = new TextBox { Text = employee.LastName };
-        var tbPosition = new TextBox { Text = employee.Position };
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        var saveButton = new Button { Content = "Сохранить" };
-        var cancelButton = new Button { Content = "Отмена" };
-
-        buttons.Children.Add(saveButton);
-        buttons.Children.Add(cancelButton);
-        panel.Children.Add(tbFirstName);
-        panel.Children.Add(tbLastName);
-        panel.Children.Add(tbPosition);
-        panel.Children.Add(buttons);
-        dialog.Content = panel;
-
-        var result = await ShowDialog(dialog, saveButton, cancelButton);
-        if (result == "Сохранить")
-        {
-            employee.FirstName = tbFirstName.Text;
-            employee.LastName = tbLastName.Text;
-            employee.Position = tbPosition.Text;
-            App.Database.UpdateEmployee(employee);
-        }
-    }
     private async Task ShowAddEquipmentDialog(int cabinetId)
     {
         var dialog = new Window
@@ -425,52 +541,10 @@ public partial class CabinetsWindow : UserControl
                 OS = tbOS.Text,
                 CabinetId = cabinetId
             });
+            LoadCabinets();
         }
     }
-    private async Task ShowEditEquipmentDialog(int equipmentId, int cabinetId)
-    {
-        var equipment = App.Database.GetEquipmentById(equipmentId);
-        if (equipment == null) return;
-
-        var dialog = new Window
-        {
-            Title = "Редактировать оборудование",
-            SizeToContent = SizeToContent.WidthAndHeight,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner
-        };
-
-        var panel = new StackPanel { Spacing = 10 };
-        var cmbType = new ComboBox
-        {
-            ItemsSource = new List<string> { "Компьютер", "Монитор", "Принтер", "Другое" },
-            SelectedItem = equipment.Type
-        };
-        var tbModel = new TextBox { Text = equipment.Model };
-        var tbOS = new TextBox { Text = equipment.OS, IsVisible = equipment.Type == "Компьютер" };
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        var saveButton = new Button { Content = "Сохранить" };
-        var cancelButton = new Button { Content = "Отмена" };
-
-        cmbType.SelectionChanged += (s, e) =>
-            tbOS.IsVisible = cmbType.SelectedItem?.ToString() == "Компьютер";
-
-        buttons.Children.Add(saveButton);
-        buttons.Children.Add(cancelButton);
-        panel.Children.Add(cmbType);
-        panel.Children.Add(tbModel);
-        panel.Children.Add(tbOS);
-        panel.Children.Add(buttons);
-        dialog.Content = panel;
-
-        var result = await ShowDialog(dialog, saveButton, cancelButton);
-        if (result == "Сохранить")
-        {
-            equipment.Type = cmbType.SelectedItem?.ToString() ?? "";
-            equipment.Model = tbModel.Text;
-            equipment.OS = tbOS.Text;
-            App.Database.UpdateEquipment(equipment);
-        }
-    }
+    
     private async Task<string> ShowDialog(Window dialog, Button saveButton, Button cancelButton)
     {
         var tcs = new TaskCompletionSource<string>();
@@ -731,7 +805,6 @@ public partial class CabinetsWindow : UserControl
                     LoadCabinets();
                 }
                 await ShowAddEmployeeDialog(info.ParentId);
-                RefreshEmployeesNode(info.ParentId);
                 break;
 
             case NodeType.Equipment:
@@ -811,50 +884,7 @@ public partial class CabinetsWindow : UserControl
                     LoadCabinets();
                 }
                 await ShowAddEquipmentDialog(info.ParentId);
-                RefreshEquipmentNode(info.ParentId);
                 break;
-        }
-    }
-
-    private void RefreshEmployeesNode(int cabinetId)
-    {
-        foreach (TreeViewItem cabinetNode in treeViewCabinets.Items)
-        {
-            if (cabinetNode.Tag is NodeInfo cabInfo &&
-                cabInfo.Type == NodeType.Cabinet &&
-                cabInfo.Id == cabinetId)
-            {
-                foreach (TreeViewItem childNode in cabinetNode.Items)
-                {
-                    if (childNode.Tag is NodeInfo childInfo &&
-                        childInfo.Type == NodeType.Employees)
-                    {
-                        LoadEmployees(childNode, cabinetId);
-                        return;
-                    }
-                }
-            }
-        }
-    }
-
-    private void RefreshEquipmentNode(int cabinetId)
-    {
-        foreach (TreeViewItem cabinetNode in treeViewCabinets.Items)
-        {
-            if (cabinetNode.Tag is NodeInfo cabInfo &&
-                cabInfo.Type == NodeType.Cabinet &&
-                cabInfo.Id == cabinetId)
-            {
-                foreach (TreeViewItem childNode in cabinetNode.Items)
-                {
-                    if (childNode.Tag is NodeInfo childInfo &&
-                        childInfo.Type == NodeType.Equipment)
-                    {
-                        LoadEquipment(childNode, cabinetId);
-                        return;
-                    }
-                }
-            }
         }
     }
 
