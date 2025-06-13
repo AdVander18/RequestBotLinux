@@ -151,7 +151,7 @@ namespace RequestBotLinux
                 M.Timestamp,
                 M.Deadline
             FROM Messages M
-            WHERE M.IsTask = 1", connection); // Убрали JOIN с Users
+            WHERE M.IsTask = 1", connection);
 
                 using (var reader = command.ExecuteReader())
                 {
@@ -764,6 +764,16 @@ namespace RequestBotLinux
                     command.Parameters.AddWithValue("@id", equipmentId);
                     command.ExecuteNonQuery();
                 }
+            }
+        }
+        public void DeleteCabinet(int id)
+        {
+            using (var connection = new SQLiteConnection(_connectionString))
+            {
+                connection.Open();
+                var command = new SQLiteCommand("DELETE FROM Cabinets WHERE Id = @id", connection);
+                command.Parameters.AddWithValue("@id", id);
+                command.ExecuteNonQuery();
             }
         }
     }

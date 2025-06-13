@@ -53,29 +53,39 @@ public partial class CabinetsWindow : UserControl
 
         switch (nodeInfo.Type)
         {
+            // Удаление сотрудника
             case NodeType.Employee:
                 title = "Удаление сотрудника";
                 message = "Вы точно хотите удалить сотрудника?";
                 break;
 
+            // Удаление оборудования
             case NodeType.EquipmentItem:
                 title = "Удаление оборудования";
                 message = "Вы точно хотите удалить оборудование?";
+                break;
+
+            // Удаление кабинета
+            case NodeType.Cabinet:
+                title = "Удаление кабинета";
+                message = "Вы точно хотите удалить кабинет?";
                 break;
 
             default:
                 return; // Неподдерживаемый тип
         }
 
+
+
         var confirmBox = MessageBoxManager.GetMessageBoxStandard(
-            new MessageBoxStandardParams
-            {
-                ButtonDefinitions = ButtonEnum.YesNo,
-                ContentTitle = title,
-                ContentMessage = message,
-                Icon = Icon.Question,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner
-            });
+        new MessageBoxStandardParams
+        {
+            ButtonDefinitions = ButtonEnum.YesNo,
+            ContentTitle = title,
+            ContentMessage = message,
+            Icon = Icon.Question,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        });
 
         var result = await confirmBox.ShowWindowDialogAsync((Window)VisualRoot);
 
@@ -90,10 +100,16 @@ public partial class CabinetsWindow : UserControl
                 case NodeType.EquipmentItem:
                     App.Database.DeleteEquipment(nodeInfo.Id);
                     break;
+
+                // Добавленный блок для удаления кабинета
+                case NodeType.Cabinet:
+                    App.Database.DeleteCabinet(nodeInfo.Id);
+                    break;
             }
 
             LoadCabinets(); // Обновляем список
         }
+
     }
     private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
@@ -428,7 +444,7 @@ public partial class CabinetsWindow : UserControl
         };
 
         var panel = new StackPanel { Spacing = 10 };
-        var cmbUser = new ComboBox { ItemsSource = users, DisplayMemberBinding = new Binding("Username") };
+        //var cmbUser = new ComboBox { ItemsSource = users, DisplayMemberBinding = new Binding("Username") };
         var tbFirstName = new TextBox { Watermark = "Имя" };
         var tbLastName = new TextBox { Watermark = "Фамилия" };
         var tbPosition = new TextBox { Watermark = "Должность" };
@@ -438,7 +454,7 @@ public partial class CabinetsWindow : UserControl
 
         buttons.Children.Add(saveButton);
         buttons.Children.Add(cancelButton);
-        panel.Children.Add(cmbUser);
+        //panel.Children.Add(cmbUser);
         panel.Children.Add(tbFirstName);
         panel.Children.Add(tbLastName);
         panel.Children.Add(tbPosition);
@@ -474,7 +490,7 @@ public partial class CabinetsWindow : UserControl
 
             App.Database.AddEmployee(new Employees
             {
-                Username = (cmbUser.SelectedItem as Models.User)?.Username ?? "",
+                //Username = (cmbUser.SelectedItem as Models.User)?.Username ?? "",
                 FirstName = tbFirstName.Text,
                 LastName = tbLastName.Text,
                 Position = tbPosition.Text,
@@ -496,7 +512,7 @@ public partial class CabinetsWindow : UserControl
         var panel = new StackPanel { Spacing = 10 };
         var cmbType = new ComboBox
         {
-            ItemsSource = new List<string> { "Компьютер", "Монитор", "Принтер", "Другое" },
+            ItemsSource = new List<string> { "Монитор", "Компьютер", "Принтер", "Другое" },
             SelectedIndex = 0
         };
         var tbModel = new TextBox { Watermark = "Модель" };

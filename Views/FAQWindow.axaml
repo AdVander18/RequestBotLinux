@@ -64,7 +64,7 @@
                         Padding="10">
 					<StackPanel Spacing="5">
 						<TextBlock Text="1. Выберите пользователя из списка"/>
-						<TextBlock Text="2. Напишите сообщение и нажмите «Отправить»"/>
+						<TextBlock Text="2. Напишите сообщение и нажмите «Отправить», или Enter"/>
 						<TextBlock FontFamily="Courier New"
                                    Text="[2023-10-01] [ADMIN] Ваше сообщение здесь"
                                    Foreground="{DynamicResource PrimaryForeground}"/>
@@ -108,7 +108,17 @@
 
 			<!-- Question 9 -->
 			<StackPanel Spacing="5">
-				<TextBlock FontWeight="Bold" Text="9. Экспорт данных в Excel"/>
+				<TextBlock FontWeight="Bold" Text="9. Как удалить кабинеты, сотрудников и оборудование?"/>
+				<StackPanel Margin="10 5" Spacing="3">
+					<TextBlock Text="1. Перейдите в раздел «Кабинеты»"/>
+					<TextBlock Text="2. Выберите кабинет, сотрудника или оборудование → Кнопка на клавиатуре «Del»"/>
+					<TextBlock Text="3. Укажите «Yes» или «No»"/>
+				</StackPanel>
+			</StackPanel>
+
+			<!-- Question 10 -->
+			<StackPanel Spacing="5">
+				<TextBlock FontWeight="Bold" Text="10. Экспорт данных в Excel"/>
 				<TextBlock TextWrapping="Wrap" Text="• Нажмите «Экспорт в Excel» в разделе «Кабинеты»"/>
 				<TextBlock Text="• Сохраняемые колонки:"/>
 				<Border Background="{DynamicResource PrimaryHoverBackground}"
@@ -121,11 +131,11 @@
 				</Border>
 			</StackPanel>
 
-			<!-- Question 10 -->
+			<!-- Question 11 -->
 			<StackPanel Spacing="5">
-				<TextBlock FontWeight="Bold" Text="10. Важные настройки"/>
-				<TextBlock TextWrapping="Wrap" Text="Темы: Измените в настройках ⚙"/>
-				<TextBlock TextWrapping="Wrap" Text="Так же здесь можно настроить токен, к которому привязан телеграм бот(то есть вы привязываете данный токен к новому боту)"/>
+				<TextBlock FontWeight="Bold" Text="11. Вкладка настроек ⚙"/>
+				<TextBlock TextWrapping="Wrap" Text="• Можно изменить тему приложения"/>
+				<TextBlock TextWrapping="Wrap" Text="• Так же здесь можно настроить токен, к которому привязан телеграм бот(то есть вы привязываете данный токен к новому боту)"/>
 				<TextBlock Margin="10 5" Text="• Кнопка 'Удалить все данные'"/>
 			</StackPanel>
 
