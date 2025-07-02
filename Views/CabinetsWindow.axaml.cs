@@ -1,25 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
-using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using ClosedXML.Excel;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Dto;
 using MsBox.Avalonia.Enums;
-using MsBox.Avalonia.Models;
 using RequestBotLinux.Models;
-using Telegram.Bot.Types;
 
 namespace RequestBotLinux;
 
@@ -395,7 +390,7 @@ public partial class CabinetsWindow : UserControl
             new TextBlock
             {
                 Text = $"{emp.FirstName} {emp.LastName}",
-                Foreground = Brushes.DarkGray 
+                Foreground = Brushes.DarkGray
             },
             new TextBlock
             {
@@ -560,7 +555,7 @@ public partial class CabinetsWindow : UserControl
             LoadCabinets();
         }
     }
-    
+
     private async Task<string> ShowDialog(Window dialog, Button saveButton, Button cancelButton)
     {
         var tcs = new TaskCompletionSource<string>();

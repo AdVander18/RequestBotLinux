@@ -1,0 +1,14 @@
+Package: requestbot
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: 
+  libc6,
+  libgcc1,
+  libstdc++6,
+  libx11-6,
+  libfontconfig1,
+  libssl3
+Maintainer: AdVander18 <mcthahernefake@gmail.com>
+Description: Cross-Platform RequestBot with telegram integrations

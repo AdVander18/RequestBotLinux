@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using ReactiveUI;
 using RequestBotLinux.Models;
 
 namespace RequestBotLinux.ViewModels
 {
-    public class MessagesViewModel: ViewModelBase
+    public class MessagesViewModel : ViewModelBase
     {
         private List<MessageData> _allMessages;
         public List<MessageData> AllMessages

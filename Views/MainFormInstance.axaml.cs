@@ -1,12 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Data.SQLite;    // Äëÿ SQLite
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -15,7 +10,6 @@ using MsBox.Avalonia;
 using MsBox.Avalonia.Enums; // Äëÿ TimePeriodDialog
 using RequestBotLinux.Views;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 
 
 namespace RequestBotLinux;

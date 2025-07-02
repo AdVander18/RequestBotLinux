@@ -1,10 +1,7 @@
 using System;
-using System.Data.Entity;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using MsBox.Avalonia.Enums;
 

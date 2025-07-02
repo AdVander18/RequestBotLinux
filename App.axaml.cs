@@ -1,22 +1,22 @@
 ﻿using System;
 using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Markup.Xaml;
+using Avalonia.Styling;
+using Avalonia.Threading;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Dto;
+using MsBox.Avalonia.Enums;
 using RequestBotLinux.Views;
-using System.Threading;
-using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
-using Avalonia.Markup.Xaml;
-using Avalonia.Threading;
-using MsBox.Avalonia;
-using MsBox.Avalonia.Enums;
-using System.Text.RegularExpressions;
-using MsBox.Avalonia.Dto;
-using System.Text;
-using Avalonia.Styling;
 
 namespace RequestBotLinux
 {
@@ -83,7 +83,7 @@ namespace RequestBotLinux
             Database = new DataBase(dbPath);
             Console.WriteLine($"Database path: {Database.DbPath}");
         }
-        
+
         public static event Action<string> BotStatusChanged;
 
         public override async void OnFrameworkInitializationCompleted()
@@ -287,7 +287,7 @@ namespace RequestBotLinux
         }
 
         // Расширение для обрезания длинного текста
-        
+
 
         private DateTime CalculateDeadline(string urgencyValue, string urgencyUnit)
         {

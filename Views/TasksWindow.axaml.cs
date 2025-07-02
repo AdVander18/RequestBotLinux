@@ -2,19 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Shapes;
 using Avalonia.Data.Converters;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using Avalonia.Media;
-using Avalonia.VisualTree;
-using DocumentFormat.OpenXml.Office2021.DocumentTasks;
-using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
 using RequestBotLinux.Models;
 
@@ -22,8 +16,8 @@ namespace RequestBotLinux;
 
 public class TaskStatusToBrushConverter : IValueConverter
 {
-    
-    
+
+
 
     public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
     {

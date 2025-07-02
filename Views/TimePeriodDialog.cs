@@ -1,10 +1,9 @@
-﻿using Avalonia.Controls;
-using Avalonia.Interactivity;
+﻿using System;
 using Avalonia;
-using System;
+using Avalonia.Controls;
 using Avalonia.Media;
-using MsBox.Avalonia.Enums;
 using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 
 namespace RequestBotLinux.Views
 {

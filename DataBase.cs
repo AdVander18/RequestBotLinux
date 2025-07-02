@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using System.Data.SQLite;
-using RequestBotLinux.Models;
 using Avalonia.Controls;
-using System.Diagnostics;
-using System.Data.Entity;
+using RequestBotLinux.Models;
 
 
 namespace RequestBotLinux

@@ -1,15 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
-using Avalonia.Media;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using LiveChartsCore.SkiaSharpView.Avalonia;
 using LiveChartsCore.SkiaSharpView.Painting;
-using Microsoft.AspNetCore.Hosting.Server;
-using RequestBotLinux.Models;
 using SkiaSharp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace RequestBotLinux;
 
